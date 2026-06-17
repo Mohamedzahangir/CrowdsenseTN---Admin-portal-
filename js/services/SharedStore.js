@@ -144,18 +144,23 @@ export const defaultActivities = [
 
 export const SharedStore = {
   init() {
-    if (!localStorage.getItem(KEYS.BUSES)) localStorage.setItem(KEYS.BUSES, JSON.stringify(defaultBuses));
-    if (!localStorage.getItem(KEYS.ROUTES)) localStorage.setItem(KEYS.ROUTES, JSON.stringify(defaultRoutes));
-    if (!localStorage.getItem(KEYS.DEVICES)) localStorage.setItem(KEYS.DEVICES, JSON.stringify(defaultDevices));
-    if (!localStorage.getItem(KEYS.ALERTS)) localStorage.setItem(KEYS.ALERTS, JSON.stringify(defaultAlerts));
-    if (!localStorage.getItem(KEYS.USERS)) localStorage.setItem(KEYS.USERS, JSON.stringify(defaultUsers));
+    if (!localStorage.getItem(KEYS.BUSES) || localStorage.getItem(KEYS.BUSES) === "[]") localStorage.setItem(KEYS.BUSES, JSON.stringify(defaultBuses));
+    if (!localStorage.getItem(KEYS.ROUTES) || localStorage.getItem(KEYS.ROUTES) === "[]") localStorage.setItem(KEYS.ROUTES, JSON.stringify(defaultRoutes));
+    if (!localStorage.getItem(KEYS.DEVICES) || localStorage.getItem(KEYS.DEVICES) === "[]") localStorage.setItem(KEYS.DEVICES, JSON.stringify(defaultDevices));
+    if (!localStorage.getItem(KEYS.ALERTS) || localStorage.getItem(KEYS.ALERTS) === "[]") localStorage.setItem(KEYS.ALERTS, JSON.stringify(defaultAlerts));
+    if (!localStorage.getItem(KEYS.USERS) || localStorage.getItem(KEYS.USERS) === "[]") localStorage.setItem(KEYS.USERS, JSON.stringify(defaultUsers));
     if (!localStorage.getItem(KEYS.SETTINGS)) localStorage.setItem(KEYS.SETTINGS, JSON.stringify(defaultSettings));
-    if (!localStorage.getItem(KEYS.ACTIVITIES)) localStorage.setItem(KEYS.ACTIVITIES, JSON.stringify(defaultActivities));
+    if (!localStorage.getItem(KEYS.ACTIVITIES) || localStorage.getItem(KEYS.ACTIVITIES) === "[]") localStorage.setItem(KEYS.ACTIVITIES, JSON.stringify(defaultActivities));
   },
 
   getItem(key) {
     const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
+    try {
+      return data ? JSON.parse(data) : null;
+    } catch (e) {
+      console.error("Error parsing localStorage key:", key, e);
+      return null;
+    }
   },
 
   setItem(key, value) {
@@ -165,3 +170,9 @@ export const SharedStore = {
     }
   }
 };
+
+// Auto-initialize when the store module is loaded
+if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+  SharedStore.init();
+}
+

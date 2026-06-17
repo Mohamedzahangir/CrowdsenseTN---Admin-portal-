@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrowdSense TN - Public Transport platform</title>
+  <meta name="description" content="CrowdSense TN Admin Portal — Smart Public Transport Management System for real-time fleet monitoring, route management, and occupancy analytics.">
+  <link rel="icon" type="image/png" href="/logo.png" />
+
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet CSS & JS CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <!-- Admin CSS -->
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- App Shell -->
+  <div id="app-shell" class="app-shell">
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="sidebar">
+      <!-- Brand -->
+      <div class="sidebar-brand">
+        <img class="brand-logo" src="/logo.png" alt="CrowdSense TN Logo" style="width: 32px; height: 32px; object-fit: contain; flex-shrink: 0;" />
+        <div class="brand-text">
+          <span class="brand-name">CrowdSense TN</span>
+          <span class="brand-sub" style="font-size: 8px; color: var(--color-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap;">Public Transport platform</span>
+        </div>
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+          <span class="material-symbols-outlined">menu</span>
+        </button>
+      </div>
+
+      <!-- Navigation Menu -->
+      <nav class="sidebar-nav" role="navigation" aria-label="Main Navigation">
+        <div class="nav-section">
+          <span class="nav-section-label">Overview</span>
+          <a href="#/dashboard" class="nav-item active" id="nav-dashboard" data-page="dashboard">
+            <span class="material-symbols-outlined nav-icon">dashboard</span>
+            <span class="nav-label">Dashboard</span>
+            <span class="nav-badge" id="badge-dashboard" style="display:none"></span>
+          </a>
+          <a href="#/operations" class="nav-item" id="nav-operations" data-page="operations">
+            <span class="material-symbols-outlined nav-icon">radar</span>
+            <span class="nav-label">Operations Center</span>
+            <span class="nav-badge live-badge">LIVE</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <span class="nav-section-label">Fleet Management</span>
+          <a href="#/buses" class="nav-item" id="nav-buses" data-page="buses">
+            <span class="material-symbols-outlined nav-icon">directions_bus</span>
+            <span class="nav-label">Bus Fleet</span>
+          </a>
+          <a href="#/routes" class="nav-item" id="nav-routes" data-page="routes">
+            <span class="material-symbols-outlined nav-icon">route</span>
+            <span class="nav-label">Routes</span>
+          </a>
+          <a href="#/devices" class="nav-item" id="nav-devices" data-page="devices">
+            <span class="material-symbols-outlined nav-icon">memory</span>
+            <span class="nav-label">IoT Devices</span>
+            <span class="nav-badge warning-badge" id="badge-devices">2</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <span class="nav-section-label">Intelligence</span>
+          <a href="#/analytics" class="nav-item" id="nav-analytics" data-page="analytics">
+            <span class="material-symbols-outlined nav-icon">analytics</span>
+            <span class="nav-label">Analytics</span>
+          </a>
+          <a href="#/notifications" class="nav-item" id="nav-notifications" data-page="notifications">
+            <span class="material-symbols-outlined nav-icon">notifications</span>
+            <span class="nav-label">Notifications</span>
+            <span class="nav-badge danger-badge" id="badge-notifications">5</span>
+          </a>
+        </div>
+
+        <div class="nav-section">
+          <span class="nav-section-label">Administration</span>
+          <a href="#/users" class="nav-item" id="nav-users" data-page="users">
+            <span class="material-symbols-outlined nav-icon">manage_accounts</span>
+            <span class="nav-label">User Management</span>
+          </a>
+          <a href="#/settings" class="nav-item" id="nav-settings" data-page="settings">
+            <span class="material-symbols-outlined nav-icon">settings</span>
+            <span class="nav-label">Settings</span>
+          </a>
+        </div>
+      </nav>
+
+      <!-- Sidebar Footer -->
+      <div class="sidebar-footer">
+        <div class="admin-profile">
+          <div class="admin-avatar">SA</div>
+          <div class="admin-info">
+            <span class="admin-name">Super Admin</span>
+            <span class="admin-role">Administrator</span>
+          </div>
+          <button class="admin-logout" title="Sign Out" id="btn-logout">
+            <span class="material-symbols-outlined">logout</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <!-- Top Header Bar -->
+      <header class="topbar" id="topbar">
+        <div class="topbar-left">
+          <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Open menu">
+            <span class="material-symbols-outlined">menu</span>
+          </button>
+          <div class="topbar-breadcrumb">
+            <span class="breadcrumb-root">CrowdSense TN</span>
+            <span class="material-symbols-outlined breadcrumb-sep">chevron_right</span>
+            <span class="breadcrumb-page" id="breadcrumb-page">Dashboard</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <!-- System Status -->
+          <div class="system-status">
+            <span class="status-dot pulse-green"></span>
+            <span class="status-text">All Systems Operational</span>
+          </div>
+          <!-- Clock -->
+          <div class="topbar-clock" id="topbar-clock"></div>
+          <!-- Notification Bell -->
+          <button class="topbar-btn" id="topbar-noti-btn" title="Notifications" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+            <span class="topbar-btn-badge" id="topbar-noti-count">5</span>
+          </button>
+          <!-- Profile -->
+          <button class="topbar-profile" id="topbar-profile-btn" title="Profile">
+            <div class="topbar-avatar">SA</div>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="page-content" id="page-content" role="main">
+        <!-- Pages rendered here dynamically -->
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-container" id="modal-container">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Modal</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close modal">
+          <span class="material-symbols-outlined">close</span>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-footer" id="modal-footer"></div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Mobile sidebar backdrop -->
+  <div id="sidebar-backdrop" class="sidebar-backdrop hidden"></div>
+
+  <!-- App Scripts -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

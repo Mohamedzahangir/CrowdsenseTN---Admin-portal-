@@ -1,0 +1,14 @@
+{
+  "name": "crowdsense-tn-admin",
+  "version": "1.0.0",
+  "description": "CrowdSense TN Admin Portal UI - Smart City Intelligent Public Transit Command Center",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

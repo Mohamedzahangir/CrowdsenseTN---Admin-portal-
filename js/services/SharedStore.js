@@ -477,6 +477,83 @@ export const SharedStore = {
         }
       })
       .subscribe();
+
+    // 5. buses realtime
+    supabase
+      .channel('buses_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'buses' }, () => {
+        supabase.from('buses').select('*').then(({ data }) => {
+          if (data) {
+            const formatted = data.map(b => ({
+              id: b.id,
+              number: b.number,
+              name: b.name,
+              type: b.type,
+              source: b.source,
+              destination: b.destination,
+              platform: b.platform,
+              capacity: b.capacity,
+              status: b.status,
+              deviceId: b.device_id,
+              driverName: b.driver_name
+            }));
+            localStorage.setItem(KEYS.BUSES, JSON.stringify(formatted));
+            window.dispatchEvent(new CustomEvent("crowdsense_store_updated", { detail: { key: KEYS.BUSES } }));
+          }
+        });
+      })
+      .subscribe();
+
+    // 6. routes realtime
+    supabase
+      .channel('routes_channel')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'routes' }, () => {
+        supabase
+          .from('routes')
+          .select(`
+            number,
+            name,
+            source,
+            destination,
+            daily_passengers,
+            occupancy_stats,
+            route_stops (
+              distance,
+              scheduled_time,
+              sequence_order,
+              stops (
+                name,
+                latitude,
+                longitude
+              )
+            )
+          `).then(({ data: routesData }) => {
+            if (routesData) {
+              const formatted = routesData.map(r => ({
+                number: r.number,
+                name: r.name,
+                source: r.source,
+                destination: r.destination,
+                dailyPassengers: r.daily_passengers,
+                occupancyStats: r.occupancy_stats,
+                stops: r.route_stops
+                  ? r.route_stops
+                      .sort((a, b) => a.sequence_order - b.sequence_order)
+                      .map(rs => ({
+                        name: rs.stops ? rs.stops.name : '',
+                        distance: rs.distance ? Number(rs.distance) : 0,
+                        scheduledTime: rs.scheduled_time || '',
+                        lat: rs.stops ? Number(rs.stops.latitude) : 0,
+                        lng: rs.stops ? Number(rs.stops.longitude) : 0
+                      }))
+                  : []
+              }));
+              localStorage.setItem(KEYS.ROUTES, JSON.stringify(formatted));
+              window.dispatchEvent(new CustomEvent("crowdsense_store_updated", { detail: { key: KEYS.ROUTES } }));
+            }
+          });
+      })
+      .subscribe();
   }
 };
 

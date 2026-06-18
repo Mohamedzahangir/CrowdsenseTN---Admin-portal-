@@ -1,6 +1,7 @@
 // NotificationsPage.js - Operations Alerts Hub
 import { DataService } from '../services/DataService';
 import { ToastComponent } from '../components/ToastComponent';
+import { ModalComponent } from '../components/ModalComponent';
 
 let dataSubscription = null;
 let currentTab = "All"; // All, Unread, Read
@@ -18,6 +19,9 @@ export const NotificationsPage = {
           <div class="flex items-center gap-2">
             <button class="btn btn-secondary" id="btn-mark-all-read">
               <span class="material-symbols-outlined">done_all</span>Mark All Acknowledged
+            </button>
+            <button class="btn btn-primary" id="btn-publish-notif">
+              <span class="material-symbols-outlined">campaign</span>Publish Notification
             </button>
           </div>
         </div>
@@ -82,6 +86,11 @@ export const NotificationsPage = {
       ToastComponent.show("All Notifications Read", "success", "Incident logs acknowledged");
       this.updateAlertsList();
     });
+
+    // Publish Notification Click
+    document.getElementById("btn-publish-notif")?.addEventListener("click", () => {
+      this.openPublishNotificationModal();
+    });
   },
 
   unmount() {
@@ -89,6 +98,90 @@ export const NotificationsPage = {
       DataService.unsubscribe("notifications", dataSubscription);
       dataSubscription = null;
     }
+  },
+
+  openPublishNotificationModal() {
+    const buses = DataService.getBuses();
+    const busOptionsHtml = `<option value="">System Wide (All Routes)</option>` + 
+      buses.map(b => `<option value="${b.id}">Route ${b.id} - ${b.name}</option>`).join("");
+
+    const bodyHtml = `
+      <form id="form-publish-notif">
+        <div class="form-group">
+          <label class="form-label">Notification Title</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Route 19B Diversion due to road work" required style="width:100%; padding:8px; border:1px solid var(--color-border-subtle); border-radius:4px;">
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label">Message Details</label>
+          <textarea name="desc" class="form-control" rows="3" placeholder="Explain the notification or alert details for the commuters..." required style="width:100%; padding:8px; border:1px solid var(--color-border-subtle); border-radius:4px; font-family:inherit;"></textarea>
+        </div>
+        <div class="form-row" style="margin-top: 12px; display:flex; gap:12px;">
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Alert Type</label>
+            <select name="type" class="form-control" style="width:100%; padding:8px; border:1px solid var(--color-border-subtle); border-radius:4px; background:white;">
+              <option value="Route Delay">Route Delay</option>
+              <option value="Bus Delay">Bus Delay</option>
+              <option value="High Occupancy">High Occupancy</option>
+              <option value="Device Offline">Device Offline</option>
+              <option value="Sensor Failure">Sensor Failure</option>
+              <option value="System Notification">System Notification</option>
+              <option value="General Update">General Update</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;">
+            <label class="form-label">Priority Level</label>
+            <select name="priority" class="form-control" style="width:100%; padding:8px; border:1px solid var(--color-border-subtle); border-radius:4px; background:white;">
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High" selected>High</option>
+              <option value="Critical">Critical</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label">Affected Bus Route</label>
+          <select name="busId" class="form-control" style="width:100%; padding:8px; border:1px solid var(--color-border-subtle); border-radius:4px; background:white;">
+            ${busOptionsHtml}
+          </select>
+        </div>
+      </form>
+    `;
+
+    const footerHtml = `
+      <button class="btn btn-ghost" id="btn-cancel-publish">Cancel</button>
+      <button class="btn btn-primary" id="btn-submit-publish">Publish Alert</button>
+    `;
+
+    const modal = ModalComponent.show({
+      title: "Publish Commuter Notification / Alert",
+      bodyHtml,
+      footerHtml
+    });
+
+    document.getElementById("btn-cancel-publish")?.addEventListener("click", () => modal.close());
+
+    document.getElementById("btn-submit-publish")?.addEventListener("click", () => {
+      const form = document.getElementById("form-publish-notif");
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const formData = new FormData(form);
+      const newAlert = {
+        title: formData.get("title"),
+        desc: formData.get("desc"),
+        type: formData.get("type"),
+        priority: formData.get("priority"),
+        busId: formData.get("busId") || "",
+      };
+
+      DataService.createAlert(newAlert);
+      DataService.addActivity("Alert Broadcasted", `Broadcasted: "${newAlert.title}"`);
+      ToastComponent.show("Notification Broadcasted", "success", `Published alert successfully.`);
+      modal.close();
+      this.updateAlertsList();
+    });
   },
 
   updateAlertsList() {

@@ -1,18 +1,17 @@
 // NotificationService.js - Centralized alerts, disruptions, and notifications system.
 // Consumes the centralized SharedStore database and defines clear integration hooks.
 import { SharedStore, KEYS } from './SharedStore';
+import { supabase } from './supabaseClient';
 
 export const NotificationService = {
   // Synchronous contract to maintain backward-compatibility with UI modules.
   // API Integration: Swap with fetch or WebSockets when API backend is deployed.
 
   getAlerts() {
-    // REST API Integration point: return await fetch('/api/alerts').then(r => r.json());
     return SharedStore.getItem(KEYS.ALERTS) || [];
   },
 
-  createAlert(alert) {
-    // REST API Integration: fetch('/api/alerts', { method: 'POST', body: JSON.stringify(alert) });
+  async createAlert(alert) {
     const alerts = this.getAlerts();
     const newAlert = {
       id: "a_" + Date.now(),
@@ -22,27 +21,48 @@ export const NotificationService = {
     };
     alerts.unshift(newAlert);
     SharedStore.setItem(KEYS.ALERTS, alerts);
+
+    const { error } = await supabase.from('alerts').insert([{
+      id: newAlert.id,
+      type: newAlert.type,
+      title: newAlert.title,
+      description: newAlert.desc,
+      bus_id: newAlert.busId,
+      priority: newAlert.priority,
+      status: newAlert.status,
+      time: newAlert.time
+    }]);
+    if (error) console.error("Error creating alert in Supabase:", error);
   },
 
-  markAlertAsRead(alertId) {
+  async markAlertAsRead(alertId) {
     const alerts = this.getAlerts();
     const idx = alerts.findIndex(a => a.id === alertId);
     if (idx !== -1) {
       alerts[idx].status = "Read";
       SharedStore.setItem(KEYS.ALERTS, alerts);
     }
+
+    const { error } = await supabase.from('alerts').update({ status: 'Read' }).eq('id', alertId);
+    if (error) console.error("Error marking alert as read in Supabase:", error);
   },
 
-  markAllAlertsAsRead() {
+  async markAllAlertsAsRead() {
     const alerts = this.getAlerts();
     alerts.forEach(a => a.status = "Read");
     SharedStore.setItem(KEYS.ALERTS, alerts);
+
+    const { error } = await supabase.from('alerts').update({ status: 'Read' }).neq('status', 'Read');
+    if (error) console.error("Error marking all alerts as read in Supabase:", error);
   },
 
-  archiveAlert(alertId) {
+  async archiveAlert(alertId) {
     let alerts = this.getAlerts();
     alerts = alerts.filter(a => a.id !== alertId);
     SharedStore.setItem(KEYS.ALERTS, alerts);
+
+    const { error } = await supabase.from('alerts').delete().eq('id', alertId);
+    if (error) console.error("Error deleting alert in Supabase:", error);
   },
 
   // Audit Logs (Admin Command Center Activities)
@@ -50,16 +70,25 @@ export const NotificationService = {
     return SharedStore.getItem(KEYS.ACTIVITIES) || [];
   },
 
-  addActivity(title, desc) {
+  async addActivity(title, desc) {
     const activities = this.getActivities();
-    activities.unshift({
+    const newAct = {
       id: "act_" + Date.now(),
       title,
       desc,
       time: "Just now"
-    });
+    };
+    activities.unshift(newAct);
     const capped = activities.slice(0, 30);
     SharedStore.setItem(KEYS.ACTIVITIES, capped);
+
+    const { error } = await supabase.from('iot_events').insert([{
+      device_id: 'system',
+      bus_id: 'system',
+      event_type: 'system_activity',
+      payload: { title, desc }
+    }]);
+    if (error) console.error("Error inserting system activity in Supabase:", error);
   },
 
   // Formats alerts for passenger-facing Customer views

@@ -240,16 +240,19 @@ export const DataService = {
   init() {
     SharedStore.init();
 
-    // Check if simulation states already exist in storage
     const storedTracking = SharedStore.getItem(KEYS.TRACKING);
     const storedOccupancy = SharedStore.getItem(KEYS.OCCUPANCY);
     if (storedTracking) trackingStates = storedTracking;
     if (storedOccupancy) occupancyStates = storedOccupancy;
 
-    if (!storedTracking || !storedOccupancy) {
-      initializeSimulation();
-    }
-    startSimulationLoop();
+    // Synchronize local in-memory states on Realtime updates
+    window.addEventListener("crowdsense_store_updated", (e) => {
+      const tracking = SharedStore.getItem(KEYS.TRACKING);
+      const occupancy = SharedStore.getItem(KEYS.OCCUPANCY);
+      if (tracking) trackingStates = tracking;
+      if (occupancy) occupancyStates = occupancy;
+      notifySubscribers();
+    });
   },
 
   // Bus CRUD (Delegated to BusService)
@@ -263,7 +266,7 @@ export const DataService = {
   addBus(bus) {
     BusService.addBus(bus);
     
-    // Dynamically add tracking and occupancy states for new vehicle
+    // Add default entry to local cache (Realtime will update DB details)
     trackingStates[bus.id] = {
       busId: bus.id,
       progress: 0,
@@ -283,7 +286,6 @@ export const DataService = {
       percentage: 0,
       lastUpdated: new Date()
     };
-    updateBusMetrics(bus.id);
 
     SharedStore.setItem(KEYS.TRACKING, trackingStates);
     SharedStore.setItem(KEYS.OCCUPANCY, occupancyStates);
@@ -299,7 +301,6 @@ export const DataService = {
         trackingStates[busId].currentStop = bus.source;
         trackingStates[busId].nextStop = bus.destination;
         trackingStates[busId].lastUpdated = new Date();
-        updateBusMetrics(busId);
       }
       if (occupancyStates[busId]) {
         occupancyStates[busId].capacity = bus.capacity;
@@ -385,7 +386,7 @@ export const DataService = {
     NotificationService.archiveAlert(alertId);
   },
 
-  // User CRUD (Delegated to SharedStore)
+  // User CRUD (Delegated to SharedStore / Supabase)
   getUsers() {
     return SharedStore.getItem(KEYS.USERS) || [];
   },
@@ -393,32 +394,47 @@ export const DataService = {
     SharedStore.setItem(KEYS.USERS, users);
     notifySubscribers();
   },
-  addUser(user) {
+  async addUser(user) {
     const users = this.getUsers();
     const newUser = { id: "u_" + Date.now(), status: "Active", ...user };
     users.push(newUser);
     this.saveUsers(users);
+
+    const { error } = await supabase.from('admin_users').insert([{
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      status: newUser.status
+    }]);
+    if (error) console.error("Error inserting user in Supabase:", error);
     this.addActivity("User Registered", `Admin profile for ${user.name} created as ${user.role}.`);
   },
-  updateUser(userId, updatedFields) {
+  async updateUser(userId, updatedFields) {
     const users = this.getUsers();
     const idx = users.findIndex(u => u.id === userId);
     if (idx !== -1) {
       users[idx] = { ...users[idx], ...updatedFields };
       this.saveUsers(users);
     }
+
+    const { error } = await supabase.from('admin_users').update(updatedFields).eq('id', userId);
+    if (error) console.error("Error updating user in Supabase:", error);
   },
-  deleteUser(userId) {
+  async deleteUser(userId) {
     const users = this.getUsers();
     const user = users.find(u => u.id === userId);
     let filtered = users.filter(u => u.id !== userId);
     this.saveUsers(filtered);
+
+    const { error } = await supabase.from('admin_users').delete().eq('id', userId);
+    if (error) console.error("Error deleting user in Supabase:", error);
     if (user) {
       this.addActivity("User Deleted", `Admin staff ${user.name} has been removed.`);
     }
   },
 
-  // Settings (Delegated to SharedStore)
+  // Settings (Delegated to SharedStore / Supabase)
   getSettings() {
     const defaultSettings = {
       highOccupancyThreshold: 75,
@@ -432,8 +448,14 @@ export const DataService = {
     };
     return SharedStore.getItem(KEYS.SETTINGS) || defaultSettings;
   },
-  saveSettings(settings) {
+  async saveSettings(settings) {
     SharedStore.setItem(KEYS.SETTINGS, settings);
+    
+    const { error } = await supabase.from('system_settings').upsert([{
+      key: 'config',
+      value: settings
+    }]);
+    if (error) console.error("Error saving settings in Supabase:", error);
     notifySubscribers();
   },
 
@@ -445,7 +467,7 @@ export const DataService = {
     NotificationService.addActivity(title, desc);
   },
 
-  // Live Simulation state exports
+  // Live State
   getLiveState() {
     return {
       tracking: trackingStates,

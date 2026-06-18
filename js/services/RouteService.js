@@ -1,18 +1,17 @@
 // RouteService.js - Centralized service managing transit routes and stop queries.
 // Consumes the centralized SharedStore database and defines clear integration hooks.
 import { SharedStore, KEYS } from './SharedStore';
+import { supabase } from './supabaseClient';
 
 export const RouteService = {
   // Synchronous contract to maintain backward-compatibility with UI modules.
   // API Integration: Swap with async/await and fetch('/api/v1/routes') when PostgreSQL/REST API backend is deployed.
 
   getAllRoutes() {
-    // PostgreSQL Integration point: return await fetch('/api/routes').then(r => r.json());
     return SharedStore.getItem(KEYS.ROUTES) || [];
   },
 
   getRouteDetails(routeNum) {
-    // PostgreSQL Integration point: return await fetch(`/api/routes/${routeNum}`).then(r => r.json());
     const routes = this.getAllRoutes();
     return routes.find(r => r.number === routeNum) || null;
   },
@@ -26,29 +25,70 @@ export const RouteService = {
     return Array.from(allStops).sort();
   },
 
+  // Helper to sync route & stops schema to Supabase
+  async syncRouteToSupabase(route) {
+    const { error: routeErr } = await supabase.from('routes').upsert([{
+      number: route.number,
+      name: route.name,
+      source: route.source,
+      destination: route.destination,
+      daily_passengers: route.dailyPassengers || 0,
+      occupancy_stats: route.occupancyStats || { peak: "0%", avg: "0%" }
+    }]);
+    if (routeErr) console.error("Error upserting route:", routeErr);
+
+    if (route.stops && Array.isArray(route.stops)) {
+      // Clear current mappings
+      await supabase.from('route_stops').delete().eq('route_number', route.number);
+
+      for (let i = 0; i < route.stops.length; i++) {
+        const stop = route.stops[i];
+        const stopId = 'stop_' + stop.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+        await supabase.from('stops').upsert([{
+          id: stopId,
+          name: stop.name,
+          latitude: stop.lat,
+          longitude: stop.lng
+        }]);
+
+        await supabase.from('route_stops').insert([{
+          route_number: route.number,
+          stop_id: stopId,
+          distance: stop.distance,
+          scheduled_time: stop.scheduledTime,
+          sequence_order: i
+        }]);
+      }
+    }
+  },
+
   // Admin Route Management actions
-  addRoute(route) {
-    // REST API Integration point: fetch('/api/routes', { method: 'POST', body: JSON.stringify(route) });
+  async addRoute(route) {
     const routes = this.getAllRoutes();
     routes.push(route);
     SharedStore.setItem(KEYS.ROUTES, routes);
+
+    await this.syncRouteToSupabase(route);
   },
 
-  updateRoute(routeNum, updatedFields) {
-    // REST API Integration point: fetch(`/api/routes/${routeNum}`, { method: 'PUT', body: JSON.stringify(updatedFields) });
+  async updateRoute(routeNum, updatedFields) {
     const routes = this.getAllRoutes();
     const idx = routes.findIndex(r => r.number === routeNum);
     if (idx !== -1) {
       routes[idx] = { ...routes[idx], ...updatedFields };
       SharedStore.setItem(KEYS.ROUTES, routes);
+      await this.syncRouteToSupabase(routes[idx]);
     }
   },
 
-  deleteRoute(routeNum) {
-    // REST API Integration point: fetch(`/api/routes/${routeNum}`, { method: 'DELETE' });
+  async deleteRoute(routeNum) {
     let routes = this.getAllRoutes();
     routes = routes.filter(r => r.number !== routeNum);
     SharedStore.setItem(KEYS.ROUTES, routes);
+
+    const { error } = await supabase.from('routes').delete().eq('number', routeNum);
+    if (error) console.error("Error deleting route in Supabase:", error);
   },
 
   searchRoutes(source, destination) {

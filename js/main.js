@@ -29,8 +29,10 @@ const routes = {
 let currentPage = null;
 
 function initApp() {
+  console.log("main.js: initApp() started");
   // 1. Initialise Simulated Database and live telemetry loops
   DataService.init();
+  console.log("main.js: DataService.init() completed");
 
   // 2. Bind Hash routing
   window.addEventListener("hashchange", handleRouting);
@@ -42,8 +44,10 @@ function initApp() {
   }
 
   // Always boot into loading screen first
+  console.log("main.js: Setting hash to #/loading");
   window.location.hash = "#/loading";
   handleRouting();
+  console.log("main.js: initApp() completed successfully");
 
   // 3. Bind UI shell features
   bindShellEvents();
@@ -55,6 +59,7 @@ function initApp() {
 }
 
 function handleRouting() {
+  console.log("main.js: handleRouting() called with hash:", window.location.hash);
   const hash = window.location.hash;
   // Parse path without query strings
   const path = hash.split("?")[0].substring(1) || "/dashboard";
@@ -193,4 +198,8 @@ function closeMobileSidebar() {
 }
 
 // Start app on load
-window.addEventListener("DOMContentLoaded", initApp);
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}

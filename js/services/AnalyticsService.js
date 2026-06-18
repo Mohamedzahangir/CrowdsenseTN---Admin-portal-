@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 
 export const AnalyticsService = {
   async getDailyRouteAnalytics() {
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from('route_analytics_daily')
       .select('*')
@@ -14,6 +15,7 @@ export const AnalyticsService = {
   },
 
   async getGPSTraceHistory(busId) {
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from('gps_history')
       .select('*')
@@ -28,6 +30,7 @@ export const AnalyticsService = {
   },
 
   async getOccupancyHistory(busId) {
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from('occupancy_history')
       .select('*')

@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 
 export const TripService = {
   async getActiveTrips() {
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from('trips')
       .select('*');
@@ -13,6 +14,7 @@ export const TripService = {
   },
 
   async createTrip(trip) {
+    if (!supabase) return null;
     const { data, error } = await supabase
       .from('trips')
       .insert([trip])
@@ -22,6 +24,7 @@ export const TripService = {
   },
 
   async updateTripStatus(tripId, status) {
+    if (!supabase) return null;
     const { data, error } = await supabase
       .from('trips')
       .update({ status })

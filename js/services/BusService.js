@@ -27,20 +27,22 @@ export const BusService = {
     buses.push(bus);
     SharedStore.setItem(KEYS.BUSES, buses);
 
-    const { error } = await supabase.from('buses').insert([{
-      id: bus.id,
-      number: bus.number,
-      name: bus.name,
-      type: bus.type,
-      source: bus.source,
-      destination: bus.destination,
-      platform: bus.platform,
-      capacity: bus.capacity,
-      status: bus.status,
-      device_id: bus.deviceId,
-      driver_name: bus.driverName
-    }]);
-    if (error) console.error("Error inserting bus into Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('buses').insert([{
+        id: bus.id,
+        number: bus.number,
+        name: bus.name,
+        type: bus.type,
+        source: bus.source,
+        destination: bus.destination,
+        platform: bus.platform,
+        capacity: bus.capacity,
+        status: bus.status,
+        device_id: bus.deviceId,
+        driver_name: bus.driverName
+      }]);
+      if (error) console.error("Error inserting bus into Supabase:", error);
+    }
   },
 
   async updateBus(busId, updatedFields) {
@@ -63,8 +65,10 @@ export const BusService = {
     if (updatedFields.deviceId !== undefined) dbFields.device_id = updatedFields.deviceId;
     if (updatedFields.driverName !== undefined) dbFields.driver_name = updatedFields.driverName;
 
-    const { error } = await supabase.from('buses').update(dbFields).eq('id', busId);
-    if (error) console.error("Error updating bus in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('buses').update(dbFields).eq('id', busId);
+      if (error) console.error("Error updating bus in Supabase:", error);
+    }
   },
 
   async deleteBus(busId) {
@@ -72,8 +76,10 @@ export const BusService = {
     buses = buses.filter(b => b.id !== busId);
     SharedStore.setItem(KEYS.BUSES, buses);
 
-    const { error } = await supabase.from('buses').delete().eq('id', busId);
-    if (error) console.error("Error deleting bus in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('buses').delete().eq('id', busId);
+      if (error) console.error("Error deleting bus in Supabase:", error);
+    }
   }
 };
 

@@ -27,6 +27,10 @@ export const RouteService = {
 
   // Helper to sync route & stops schema to Supabase
   async syncRouteToSupabase(route) {
+    if (!supabase) {
+      console.warn("RouteService: Supabase client is not initialized. Skipping route synchronization.");
+      return;
+    }
     const { error: routeErr } = await supabase.from('routes').upsert([{
       number: route.number,
       name: route.name,
@@ -87,8 +91,10 @@ export const RouteService = {
     routes = routes.filter(r => r.number !== routeNum);
     SharedStore.setItem(KEYS.ROUTES, routes);
 
-    const { error } = await supabase.from('routes').delete().eq('number', routeNum);
-    if (error) console.error("Error deleting route in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('routes').delete().eq('number', routeNum);
+      if (error) console.error("Error deleting route in Supabase:", error);
+    }
   },
 
   searchRoutes(source, destination) {

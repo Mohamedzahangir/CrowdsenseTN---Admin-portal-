@@ -400,14 +400,16 @@ export const DataService = {
     users.push(newUser);
     this.saveUsers(users);
 
-    const { error } = await supabase.from('admin_users').insert([{
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      status: newUser.status
-    }]);
-    if (error) console.error("Error inserting user in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('admin_users').insert([{
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role,
+        status: newUser.status
+      }]);
+      if (error) console.error("Error inserting user in Supabase:", error);
+    }
     this.addActivity("User Registered", `Admin profile for ${user.name} created as ${user.role}.`);
   },
   async updateUser(userId, updatedFields) {
@@ -418,8 +420,10 @@ export const DataService = {
       this.saveUsers(users);
     }
 
-    const { error } = await supabase.from('admin_users').update(updatedFields).eq('id', userId);
-    if (error) console.error("Error updating user in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('admin_users').update(updatedFields).eq('id', userId);
+      if (error) console.error("Error updating user in Supabase:", error);
+    }
   },
   async deleteUser(userId) {
     const users = this.getUsers();
@@ -427,8 +431,10 @@ export const DataService = {
     let filtered = users.filter(u => u.id !== userId);
     this.saveUsers(filtered);
 
-    const { error } = await supabase.from('admin_users').delete().eq('id', userId);
-    if (error) console.error("Error deleting user in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('admin_users').delete().eq('id', userId);
+      if (error) console.error("Error deleting user in Supabase:", error);
+    }
     if (user) {
       this.addActivity("User Deleted", `Admin staff ${user.name} has been removed.`);
     }
@@ -451,11 +457,13 @@ export const DataService = {
   async saveSettings(settings) {
     SharedStore.setItem(KEYS.SETTINGS, settings);
     
-    const { error } = await supabase.from('system_settings').upsert([{
-      key: 'config',
-      value: settings
-    }]);
-    if (error) console.error("Error saving settings in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('system_settings').upsert([{
+        key: 'config',
+        value: settings
+      }]);
+      if (error) console.error("Error saving settings in Supabase:", error);
+    }
     notifySubscribers();
   },
 

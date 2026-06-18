@@ -22,17 +22,19 @@ export const DeviceService = {
     devices.push(device);
     SharedStore.setItem(KEYS.DEVICES, devices);
 
-    const { error } = await supabase.from('devices').insert([{
-      id: device.id,
-      bus_id: device.busId,
-      status: device.status,
-      last_comm: device.lastComm,
-      fw_version: device.fwVersion,
-      rssi: device.rssi,
-      heap: device.heap,
-      temperature: device.temperature
-    }]);
-    if (error) console.error("Error inserting device in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('devices').insert([{
+        id: device.id,
+        bus_id: device.busId,
+        status: device.status,
+        last_comm: device.lastComm,
+        fw_version: device.fwVersion,
+        rssi: device.rssi,
+        heap: device.heap,
+        temperature: device.temperature
+      }]);
+      if (error) console.error("Error inserting device in Supabase:", error);
+    }
   },
 
   async updateDevice(deviceId, updatedFields) {
@@ -52,8 +54,10 @@ export const DeviceService = {
     if (updatedFields.heap !== undefined) dbFields.heap = updatedFields.heap;
     if (updatedFields.temperature !== undefined) dbFields.temperature = updatedFields.temperature;
 
-    const { error } = await supabase.from('devices').update(dbFields).eq('id', deviceId);
-    if (error) console.error("Error updating device in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('devices').update(dbFields).eq('id', deviceId);
+      if (error) console.error("Error updating device in Supabase:", error);
+    }
   },
 
   async deleteDevice(deviceId) {
@@ -61,7 +65,9 @@ export const DeviceService = {
     devices = devices.filter(d => d.id !== deviceId);
     SharedStore.setItem(KEYS.DEVICES, devices);
 
-    const { error } = await supabase.from('devices').delete().eq('id', deviceId);
-    if (error) console.error("Error deleting device in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('devices').delete().eq('id', deviceId);
+      if (error) console.error("Error deleting device in Supabase:", error);
+    }
   }
 };

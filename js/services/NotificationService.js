@@ -22,17 +22,19 @@ export const NotificationService = {
     alerts.unshift(newAlert);
     SharedStore.setItem(KEYS.ALERTS, alerts);
 
-    const { error } = await supabase.from('alerts').insert([{
-      id: newAlert.id,
-      type: newAlert.type,
-      title: newAlert.title,
-      description: newAlert.desc,
-      bus_id: newAlert.busId,
-      priority: newAlert.priority,
-      status: newAlert.status,
-      time: newAlert.time
-    }]);
-    if (error) console.error("Error creating alert in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('alerts').insert([{
+        id: newAlert.id,
+        type: newAlert.type,
+        title: newAlert.title,
+        description: newAlert.desc,
+        bus_id: newAlert.busId,
+        priority: newAlert.priority,
+        status: newAlert.status,
+        time: newAlert.time
+      }]);
+      if (error) console.error("Error creating alert in Supabase:", error);
+    }
   },
 
   async markAlertAsRead(alertId) {
@@ -43,8 +45,10 @@ export const NotificationService = {
       SharedStore.setItem(KEYS.ALERTS, alerts);
     }
 
-    const { error } = await supabase.from('alerts').update({ status: 'Read' }).eq('id', alertId);
-    if (error) console.error("Error marking alert as read in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('alerts').update({ status: 'Read' }).eq('id', alertId);
+      if (error) console.error("Error marking alert as read in Supabase:", error);
+    }
   },
 
   async markAllAlertsAsRead() {
@@ -52,8 +56,10 @@ export const NotificationService = {
     alerts.forEach(a => a.status = "Read");
     SharedStore.setItem(KEYS.ALERTS, alerts);
 
-    const { error } = await supabase.from('alerts').update({ status: 'Read' }).neq('status', 'Read');
-    if (error) console.error("Error marking all alerts as read in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('alerts').update({ status: 'Read' }).neq('status', 'Read');
+      if (error) console.error("Error marking all alerts as read in Supabase:", error);
+    }
   },
 
   async archiveAlert(alertId) {
@@ -61,8 +67,10 @@ export const NotificationService = {
     alerts = alerts.filter(a => a.id !== alertId);
     SharedStore.setItem(KEYS.ALERTS, alerts);
 
-    const { error } = await supabase.from('alerts').delete().eq('id', alertId);
-    if (error) console.error("Error deleting alert in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('alerts').delete().eq('id', alertId);
+      if (error) console.error("Error deleting alert in Supabase:", error);
+    }
   },
 
   // Audit Logs (Admin Command Center Activities)
@@ -82,13 +90,15 @@ export const NotificationService = {
     const capped = activities.slice(0, 30);
     SharedStore.setItem(KEYS.ACTIVITIES, capped);
 
-    const { error } = await supabase.from('iot_events').insert([{
-      device_id: 'system',
-      bus_id: 'system',
-      event_type: 'system_activity',
-      payload: { title, desc }
-    }]);
-    if (error) console.error("Error inserting system activity in Supabase:", error);
+    if (supabase) {
+      const { error } = await supabase.from('iot_events').insert([{
+        device_id: 'system',
+        bus_id: 'system',
+        event_type: 'system_activity',
+        payload: { title, desc }
+      }]);
+      if (error) console.error("Error inserting system activity in Supabase:", error);
+    }
   },
 
   // Formats alerts for passenger-facing Customer views

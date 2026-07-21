@@ -2,6 +2,8 @@
 import { DataService } from '../services/DataService';
 import { ModalComponent } from '../components/ModalComponent';
 import { ToastComponent } from '../components/ToastComponent';
+import { supabase } from '../services/supabaseClient';
+import { saveOrUpdateTelemetry } from '../services/SharedStore';
 
 let dataSubscription = null;
 let currentSearch = "";
@@ -192,54 +194,122 @@ export const DevicesPage = {
     const bodyHtml = `
       <div style="background:#0F172A; color:#38BDF8; font-family:'Courier New', monospace; padding:16px; border-radius:8px; height: 320px; overflow-y: auto; font-size:12px; line-height:1.5;" id="serial-terminal">
         <p style="color:#22C55E;">[SYS] Serial Console initialized. Baud Rate: 115200</p>
-        <p style="color:#94A3B8;">[SYS] Node Connected. Boot Time: ${bootTime}</p>
-        <p style="color:#E2E8F0;">[INIT] WiFi connecting to 'CrowdSense_Net_5G' ...</p>
-        <p style="color:#22C55E;">[INIT] WiFi Connected! IP Address: 192.168.4.152</p>
-        <p style="color:#E2E8F0;">[MQTT] Establishing connection to Broker: broker.hivemq.com:1883</p>
-        <p style="color:#22C55E;">[MQTT] Connected. Subscribing to: crowdsense/bus/${device.busId || "unassigned"}/cmd</p>
-        <p style="color:#F1F5F9;">[SENSORS] VL53L1X laser rangefinder loaded. Status: OK</p>
-        <p style="color:#F1F5F9;">[SENSORS] GPS Neo-6M Lock established. Sats: 8</p>
-        <p style="color:#94A3B8;">[LOOP] Telemetry heartbeat sent. RSSI: ${device.rssi}, Heap: ${device.heap}, Temp: ${device.temperature}</p>
-        <p style="color:#34D399;">[JSON] {"client_id":"${device.id}","lat":13.0064,"lng":80.2577,"passengers":${device.busId ? "35" : "0"},"doors_active":0}</p>
-        <p id="serial-pulse" style="color:#E2E8F0;">[LOOP] Listening for IR beams events...</p>
+        <p style="color:#94A3B8;">[SYS] Listening for Supabase Realtime 'iot_events' on ID: ${device.id}</p>
+        <p style="color:#E2E8F0;">[INIT] Target Table: public.iot_events</p>
+        <p style="color:#22C55E;">[INIT] Status: Listening for incoming pings...</p>
+        <p style="color:#94A3B8;">[LOOP] Current state: RSSI ${device.rssi}, Heap: ${device.heap}, Temp: ${device.temperature}</p>
+        <p id="serial-pulse" style="color:#E2E8F0;">[LOOP] Waiting for ESP32 packet...</p>
       </div>
     `;
+
+    let autoStreamInterval = null;
 
     const modal = ModalComponent.show({
       title: `ESP32 Serial Stream - Node ${device.id}`,
       bodyHtml,
       footerHtml: `
+        <button class="btn btn-secondary btn-sm" id="btn-auto-stream"><span class="material-symbols-outlined">play_arrow</span>Start Auto Stream (3s)</button>
+        <button class="btn btn-secondary btn-sm" id="btn-test-telemetry"><span class="material-symbols-outlined">send</span>Send Test Ping</button>
         <button class="btn btn-secondary btn-sm" id="btn-reboot-node"><span class="material-symbols-outlined">restart_alt</span>Soft Reset</button>
         <button class="btn btn-primary btn-sm" id="btn-close-serial">Close Terminal</button>
       `
     });
 
-    // Auto scroll to bottom
     const term = document.getElementById("serial-terminal");
     if (term) term.scrollTop = term.scrollHeight;
 
-    // Simulate logs stream
+    // Listen to real-time events from Supabase
+    const telemetryHandler = (e) => {
+      const data = e.detail;
+      const term = document.getElementById("serial-terminal");
+      if (!term) return;
+
+      const p = document.createElement("p");
+      p.style.color = "#4ADE80";
+      p.style.fontWeight = "bold";
+      p.textContent = `[REALTIME RECV] [${new Date().toLocaleTimeString()}] ${JSON.stringify(data)}`;
+      term.insertBefore(p, document.getElementById("serial-pulse"));
+      term.scrollTop = term.scrollHeight;
+    };
+
+    window.addEventListener("crowdsense_iot_telemetry_received", telemetryHandler);
+
+    // Periodic heartbeat log
     const interval = setInterval(() => {
       const term = document.getElementById("serial-terminal");
       if (!term) {
         clearInterval(interval);
+        if (autoStreamInterval) clearInterval(autoStreamInterval);
+        window.removeEventListener("crowdsense_iot_telemetry_received", telemetryHandler);
         return;
       }
       const p = document.createElement("p");
       p.style.color = "#38BDF8";
-      p.textContent = `[LOOP] [${new Date().toLocaleTimeString()}] Ping heartbeat OK. RSSI: -${60 + Math.floor(Math.random()*10)} dBm | Free Heap: ${170 + Math.floor(Math.random()*10)} KB`;
+      p.textContent = `[LOOP] [${new Date().toLocaleTimeString()}] Telemetry listener active for ${device.id}`;
       term.insertBefore(p, document.getElementById("serial-pulse"));
       term.scrollTop = term.scrollHeight;
-    }, 3000);
+    }, 5000);
+
+    const sendSinglePacket = async () => {
+      const dynamicPassengers = Math.floor(Math.random() * 20) + 6;
+      const dynamicRssi = `-${55 + Math.floor(Math.random() * 15)} dBm`;
+      const dynamicTemp = `${(36 + Math.random() * 5).toFixed(1)} °C`;
+      const dynamicSpeed = Math.floor(Math.random() * 25) + 20;
+      const lat = 12.9238 + (Math.random() * 0.005);
+      const lng = 79.1352 + (Math.random() * 0.005);
+      const busId = device.busId || "BUS_001";
+
+      const testPayload = {
+        device_id: device.id,
+        bus_id: busId,
+        latitude: lat,
+        longitude: lng,
+        speed: dynamicSpeed,
+        passengers: dynamicPassengers,
+        rssi: dynamicRssi,
+        temperature: dynamicTemp,
+        event_type: "telemetry"
+      };
+
+      await saveOrUpdateTelemetry(testPayload);
+    };
+
+    document.getElementById("btn-test-telemetry")?.addEventListener("click", async () => {
+      await sendSinglePacket();
+      ToastComponent.show("Packet Sent", "success", `Upserted telemetry for ${device.id}`);
+    });
+
+    document.getElementById("btn-auto-stream")?.addEventListener("click", () => {
+      const btn = document.getElementById("btn-auto-stream");
+      if (autoStreamInterval) {
+        clearInterval(autoStreamInterval);
+        autoStreamInterval = null;
+        btn.innerHTML = `<span class="material-symbols-outlined">play_arrow</span>Start Auto Stream (3s)`;
+        btn.classList.remove("btn-success");
+        btn.classList.add("btn-secondary");
+        ToastComponent.show("Auto Stream Stopped", "info", "3s packet stream paused.");
+      } else {
+        sendSinglePacket();
+        autoStreamInterval = setInterval(sendSinglePacket, 3000);
+        btn.innerHTML = `<span class="material-symbols-outlined">pause</span>Streaming (3s)... [Stop]`;
+        btn.classList.remove("btn-secondary");
+        btn.classList.add("btn-success");
+        ToastComponent.show("Auto Stream Started", "success", "Sending telemetry packet every 3 seconds.");
+      }
+    });
 
     document.getElementById("btn-close-serial")?.addEventListener("click", () => {
+      if (autoStreamInterval) clearInterval(autoStreamInterval);
       clearInterval(interval);
+      window.removeEventListener("crowdsense_iot_telemetry_received", telemetryHandler);
       modal.close();
     });
 
     document.getElementById("btn-reboot-node")?.addEventListener("click", () => {
+      if (autoStreamInterval) clearInterval(autoStreamInterval);
       ToastComponent.show("Reset Command Sent", "warning", `ESP32 ${device.id} restarting.`);
       clearInterval(interval);
+      window.removeEventListener("crowdsense_iot_telemetry_received", telemetryHandler);
       modal.close();
     });
   },

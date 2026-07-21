@@ -10,10 +10,14 @@ export const StatusBadge = {
       label = "Medium Crowd";
       chipClass = "status-chip-medium";
       color = "#eab308"; // yellow
-    } else if (percentage > 75) {
+    } else if (percentage > 75 && percentage <= 100) {
       label = "High Crowd";
       chipClass = "status-chip-high";
       color = "#ef4444"; // red
+    } else if (percentage > 100) {
+      label = "Overcrowded";
+      chipClass = "status-chip-overcrowded";
+      color = "#991b1b"; // dark red
     }
 
     return { label, chipClass, color };

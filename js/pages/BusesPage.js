@@ -43,7 +43,8 @@ export const BusesPage = {
               <option value="All" ${currentOccupancyFilter === "All" ? "selected" : ""}>All Load Levels</option>
               <option value="Low" ${currentOccupancyFilter === "Low" ? "selected" : ""}>Low (&lt;40%)</option>
               <option value="Medium" ${currentOccupancyFilter === "Medium" ? "selected" : ""}>Medium (40-75%)</option>
-              <option value="High" ${currentOccupancyFilter === "High" ? "selected" : ""}>High (&gt;75%)</option>
+              <option value="High" ${currentOccupancyFilter === "High" ? "selected" : ""}>High (76-100%)</option>
+              <option value="Overcrowded" ${currentOccupancyFilter === "Overcrowded" ? "selected" : ""}>Overcrowded (&gt;100%)</option>
             </select>
           </div>
         </div>
@@ -157,7 +158,8 @@ export const BusesPage = {
         if (!occ) return false;
         if (currentOccupancyFilter === "Low") return occ.percentage <= 40;
         if (currentOccupancyFilter === "Medium") return occ.percentage > 40 && occ.percentage <= 75;
-        if (currentOccupancyFilter === "High") return occ.percentage > 75;
+        if (currentOccupancyFilter === "High") return occ.percentage > 75 && occ.percentage <= 100;
+        if (currentOccupancyFilter === "Overcrowded") return occ.percentage > 100;
         return true;
       });
     }

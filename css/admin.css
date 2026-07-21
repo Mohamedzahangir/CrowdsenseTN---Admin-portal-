@@ -2221,5 +2221,11 @@ body.loading-screen-active .app-shell .page-content {
   height: 38px;
 }
 
+.status-chip-overcrowded {
+  background: rgba(185, 28, 28, 0.15);
+  color: #991b1b;
+  border: 1px solid rgba(185, 28, 28, 0.4);
+}
+
 
 

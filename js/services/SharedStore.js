@@ -15,6 +15,7 @@ export const KEYS = {
 };
 
 export const defaultBuses = [
+  { id: "BUS_001", number: "Tn-01-1995", name: "Prototype Bus", type: "Local", source: "Vellore Bus Terminus", destination: "Katpadi Jn.", platform: "P1", capacity: 20, status: "Active", deviceId: "70:4B:CA:46:82:90", driverName: "Harish" },
   { id: "47A", number: "TN-23-N-4512", name: "Vellore Express", type: "Express", source: "Vellore Bus Terminus", destination: "Katpadi Jn.", platform: "P4", capacity: 60, status: "Active", deviceId: "ESP32-047A", driverName: "K. Rajendran" },
   { id: "19B", number: "TN-01-N-8829", name: "T. Nagar Loop", type: "Local", source: "Adyar Depot", destination: "T. Nagar Bus Terminus", platform: "P1", capacity: 60, status: "Active", deviceId: "ESP32-019B", driverName: "M. Saravanan" },
   { id: "23C", number: "TN-01-N-6610", name: "Thiruvanmiyur Fast", type: "Fast", source: "Mylapore Temple", destination: "Thiruvanmiyur", platform: "P2", capacity: 60, status: "Active", deviceId: "ESP32-023C", driverName: "R. Krishnan" },
@@ -101,6 +102,7 @@ export const defaultRoutes = [
 ];
 
 export const defaultDevices = [
+  { id: "70:4B:CA:46:82:90", busId: "BUS_001", status: "Online", lastComm: "Just now", fwVersion: "v1.4.2", rssi: "-58 dBm", heap: "182 KB", temperature: "40.2 °C", isRealHardware: true },
   { id: "ESP32-047A", busId: "47A", status: "Online", lastComm: "Just now", fwVersion: "v1.4.2", rssi: "-58 dBm", heap: "182 KB", temperature: "41.5 °C" },
   { id: "ESP32-019B", busId: "19B", status: "Online", lastComm: "Just now", fwVersion: "v1.4.2", rssi: "-64 dBm", heap: "179 KB", temperature: "43.2 °C" },
   { id: "ESP32-023C", busId: "23C", status: "Online", lastComm: "Just now", fwVersion: "v1.4.2", rssi: "-55 dBm", heap: "185 KB", temperature: "39.8 °C" },
@@ -155,7 +157,15 @@ export const SharedStore = {
     try {
       if (!localStorage.getItem(KEYS.BUSES) || localStorage.getItem(KEYS.BUSES) === "[]") localStorage.setItem(KEYS.BUSES, JSON.stringify(defaultBuses));
       if (!localStorage.getItem(KEYS.ROUTES) || localStorage.getItem(KEYS.ROUTES) === "[]") localStorage.setItem(KEYS.ROUTES, JSON.stringify(defaultRoutes));
-      if (!localStorage.getItem(KEYS.DEVICES) || localStorage.getItem(KEYS.DEVICES) === "[]") localStorage.setItem(KEYS.DEVICES, JSON.stringify(defaultDevices));
+      if (!localStorage.getItem(KEYS.DEVICES) || localStorage.getItem(KEYS.DEVICES) === "[]") {
+        localStorage.setItem(KEYS.DEVICES, JSON.stringify(defaultDevices));
+      } else {
+        const storedDevices = JSON.parse(localStorage.getItem(KEYS.DEVICES) || "[]");
+        if (!storedDevices.some(d => d.id === "70:4B:CA:46:82:90" || d.id === "ESP32-704BCA468290")) {
+          storedDevices.unshift({ id: "70:4B:CA:46:82:90", busId: "47A", status: "Online", lastComm: "Just now", fwVersion: "v1.4.2", rssi: "-58 dBm", heap: "182 KB", temperature: "41.5 °C" });
+          localStorage.setItem(KEYS.DEVICES, JSON.stringify(storedDevices));
+        }
+      }
       if (!localStorage.getItem(KEYS.ALERTS) || localStorage.getItem(KEYS.ALERTS) === "[]") localStorage.setItem(KEYS.ALERTS, JSON.stringify(defaultAlerts));
       if (!localStorage.getItem(KEYS.USERS) || localStorage.getItem(KEYS.USERS) === "[]") localStorage.setItem(KEYS.USERS, JSON.stringify(defaultUsers));
       if (!localStorage.getItem(KEYS.SETTINGS)) localStorage.setItem(KEYS.SETTINGS, JSON.stringify(defaultSettings));
@@ -336,9 +346,9 @@ export const SharedStore = {
             passengers: r.passengers,
             capacity: r.capacity,
             percentage: r.percentage,
-            status: r.percentage <= 40 ? "Low Crowd" : r.percentage <= 75 ? "Medium Crowd" : "High Crowd",
-            class: r.percentage <= 40 ? "status-chip-low" : r.percentage <= 75 ? "status-chip-medium" : "status-chip-high",
-            colorHex: r.percentage <= 40 ? "#22c55e" : r.percentage <= 75 ? "#eab308" : "#ef4444",
+            status: r.percentage <= 40 ? "Low Crowd" : r.percentage <= 75 ? "Medium Crowd" : r.percentage <= 100 ? "High Crowd" : "Overcrowded",
+            class: r.percentage <= 40 ? "status-chip-low" : r.percentage <= 75 ? "status-chip-medium" : r.percentage <= 100 ? "status-chip-high" : "status-chip-overcrowded",
+            colorHex: r.percentage <= 40 ? "#22c55e" : r.percentage <= 75 ? "#eab308" : r.percentage <= 100 ? "#ef4444" : "#991b1b",
             lastUpdated: new Date(r.last_updated)
           };
         });
@@ -406,9 +416,9 @@ export const SharedStore = {
             passengers: r.passengers,
             capacity: r.capacity,
             percentage: r.percentage,
-            status: r.percentage <= 40 ? "Low Crowd" : r.percentage <= 75 ? "Medium Crowd" : "High Crowd",
-            class: r.percentage <= 40 ? "status-chip-low" : r.percentage <= 75 ? "status-chip-medium" : "status-chip-high",
-            colorHex: r.percentage <= 40 ? "#22c55e" : r.percentage <= 75 ? "#eab308" : "#ef4444",
+            status: r.percentage <= 40 ? "Low Crowd" : r.percentage <= 75 ? "Medium Crowd" : r.percentage <= 100 ? "High Crowd" : "Overcrowded",
+            class: r.percentage <= 40 ? "status-chip-low" : r.percentage <= 75 ? "status-chip-medium" : r.percentage <= 100 ? "status-chip-high" : "status-chip-overcrowded",
+            colorHex: r.percentage <= 40 ? "#22c55e" : r.percentage <= 75 ? "#eab308" : r.percentage <= 100 ? "#ef4444" : "#991b1b",
             lastUpdated: new Date(r.last_updated)
           };
 
@@ -471,7 +481,9 @@ export const SharedStore = {
       .channel('iot_events_channel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'iot_events' }, payload => {
         const event = payload.new;
-        if (event && event.event_type === 'system_activity') {
+        if (!event) return;
+
+        if (event.event_type === 'system_activity') {
           const activities = this.getItem(KEYS.ACTIVITIES) || [];
           activities.unshift({
             id: 'act_' + event.id,
@@ -482,6 +494,117 @@ export const SharedStore = {
           const capped = activities.slice(0, 30);
           localStorage.setItem(KEYS.ACTIVITIES, JSON.stringify(capped));
           window.dispatchEvent(new CustomEvent("crowdsense_store_updated", { detail: { key: KEYS.ACTIVITIES } }));
+        } else {
+          // Process hardware node telemetry (e.g. device_id = 70:4B:CA:46:82:90)
+          const devId = event.device_id || "70:4B:CA:46:82:90";
+          const busId = event.bus_id || "47A";
+
+          // Update Devices list
+          const devices = this.getItem(KEYS.DEVICES) || [];
+          let devIndex = devices.findIndex(d => 
+            d.id === devId || 
+            d.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() === devId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()
+          );
+
+          const updatedDev = {
+            id: devId,
+            busId: busId,
+            status: "Online",
+            lastComm: "Just now",
+            fwVersion: event.fw_version || "v1.4.2",
+            rssi: event.rssi ? (String(event.rssi).includes('dBm') ? event.rssi : `${event.rssi} dBm`) : "-58 dBm",
+            heap: event.heap || "182 KB",
+            temperature: event.temperature ? (String(event.temperature).includes('°C') ? event.temperature : `${event.temperature} °C`) : "41.5 °C",
+            isRealHardware: true,
+            lastCommTimestamp: Date.now()
+          };
+
+          if (devIndex !== -1) {
+            devices[devIndex] = { ...devices[devIndex], ...updatedDev };
+          } else {
+            devices.unshift(updatedDev);
+          }
+          localStorage.setItem(KEYS.DEVICES, JSON.stringify(devices));
+          window.dispatchEvent(new CustomEvent("crowdsense_store_updated", { detail: { key: KEYS.DEVICES } }));
+
+          // Update live bus status / tracking / occupancy if lat/lng/passengers provided
+          if (busId && (event.latitude || event.passengers !== undefined)) {
+            const tracking = this.getItem(KEYS.TRACKING) || {};
+            const occupancy = this.getItem(KEYS.OCCUPANCY) || {};
+
+            if (event.latitude && event.longitude) {
+              tracking[busId] = {
+                ...(tracking[busId] || {}),
+                busId: busId,
+                lat: Number(event.latitude),
+                lng: Number(event.longitude),
+                speed: event.speed !== undefined ? Number(event.speed) : 35,
+                health: "Good",
+                lastUpdated: new Date()
+              };
+              localStorage.setItem(KEYS.TRACKING, JSON.stringify(tracking));
+              window.dispatchEvent(new CustomEvent("crowdsense_store_updated", { detail: { key: KEYS.TRACKING } }));
+            }
+
+            if (event.passengers !== undefined) {
+              const pass = Number(event.passengers);
+              const cap = (occupancy[busId] && occupancy[busId].capacity) ? occupancy[busId].capacity : 60;
+              const pct = Math.round((pass / cap) * 100);
+              occupancy[busId] = {
+                ...(occupancy[busId] || {}),
+                busId: busId,
+                passengers: pass,
+                capacity: cap,
+                percentage: pct,
+                status: pct <= 40 ? "Low Crowd" : pct <= 75 ? "Medium Crowd" : pct <= 100 ? "High Crowd" : "Overcrowded",
+                class: pct <= 40 ? "status-chip-low" : pct <= 75 ? "status-chip-medium" : pct <= 100 ? "status-chip-high" : "status-chip-overcrowded",
+                colorHex: pct <= 40 ? "#22c55e" : pct <= 75 ? "#eab308" : pct <= 100 ? "#ef4444" : "#991b1b",
+                lastUpdated: new Date()
+              };
+              localStorage.setItem(KEYS.OCCUPANCY, JSON.stringify(occupancy));
+              window.dispatchEvent(new CustomEvent("crowdsense_store_updated", { detail: { key: KEYS.OCCUPANCY } }));
+            }
+          }
+
+          // Trigger custom event for UI console loggers / toasts
+          window.dispatchEvent(new CustomEvent("crowdsense_iot_telemetry_received", { detail: event }));
+
+          // Upsert into Supabase devices and live_bus_status tables for 2-way DB sync
+          if (supabase) {
+            supabase.from('devices').upsert({
+              id: devId,
+              bus_id: busId,
+              status: 'Online',
+              rssi: updatedDev.rssi,
+              temperature: updatedDev.temperature,
+              last_comm: 'Just now',
+              updated_at: new Date()
+            }).then(({ error }) => {
+              if (error) console.error("Error upserting device in Supabase:", error);
+            });
+
+            if (busId && (event.latitude || event.passengers !== undefined)) {
+              const pass = event.passengers !== undefined ? Number(event.passengers) : undefined;
+              const dbUpdate = {
+                bus_id: busId,
+                last_updated: new Date()
+              };
+              if (event.latitude && event.longitude) {
+                dbUpdate.latitude = Number(event.latitude);
+                dbUpdate.longitude = Number(event.longitude);
+                dbUpdate.speed = event.speed !== undefined ? Number(event.speed) : 35;
+              }
+              if (pass !== undefined) {
+                const cap = 60;
+                dbUpdate.passengers = pass;
+                dbUpdate.capacity = cap;
+                dbUpdate.percentage = Math.round((pass / cap) * 100);
+              }
+              supabase.from('live_bus_status').upsert(dbUpdate, { onConflict: 'bus_id' }).then(({ error }) => {
+                if (error) console.error("Error upserting live_bus_status in Supabase:", error);
+              });
+            }
+          }
         }
       })
       .subscribe();
@@ -565,9 +688,85 @@ export const SharedStore = {
   }
 };
 
-// Auto-initialize when the store module is loaded
-if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-  SharedStore.init();
+export async function saveOrUpdateTelemetry(payload) {
+  if (!supabase) {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("crowdsense_iot_telemetry_received", { detail: payload }));
+    }
+    return;
+  }
+
+  const busId = payload.bus_id || "BUS_001";
+  const devId = payload.device_id || "70:4B:CA:46:82:90";
+
+  // 1. Check if row exists in iot_events for this bus_id -> UPDATE if exists, INSERT if missing
+  const { data: existingEvent } = await supabase
+    .from('iot_events')
+    .select('id')
+    .eq('bus_id', busId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingEvent) {
+    await supabase.from('iot_events').update({
+      ...payload,
+      timestamp: new Date()
+    }).eq('id', existingEvent.id);
+  } else {
+    await supabase.from('iot_events').insert([{
+      ...payload,
+      timestamp: new Date()
+    }]);
+  }
+
+  // 2. Check if row exists in devices for this device id -> UPDATE if exists, INSERT if missing
+  const devPayload = {
+    id: devId,
+    bus_id: busId,
+    status: 'Online',
+    rssi: payload.rssi || '-60 dBm',
+    temperature: payload.temperature || '38.5 °C',
+    last_comm: 'Just now',
+    updated_at: new Date()
+  };
+
+  const { data: existingDev } = await supabase
+    .from('devices')
+    .select('id')
+    .eq('id', devId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingDev) {
+    await supabase.from('devices').update(devPayload).eq('id', devId);
+  } else {
+    await supabase.from('devices').insert([devPayload]);
+  }
+
+  // 3. Check if row exists in live_bus_status for this bus_id -> UPDATE if exists, INSERT if missing
+  const livePayload = {
+    bus_id: busId,
+    latitude: payload.latitude,
+    longitude: payload.longitude,
+    speed: payload.speed,
+    passengers: payload.passengers,
+    capacity: 20,
+    percentage: Math.round(((payload.passengers || 0) / 20) * 100),
+    last_updated: new Date()
+  };
+
+  const { data: existingLive } = await supabase
+    .from('live_bus_status')
+    .select('bus_id')
+    .eq('bus_id', busId)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingLive) {
+    await supabase.from('live_bus_status').update(livePayload).eq('bus_id', busId);
+  } else {
+    await supabase.from('live_bus_status').insert([livePayload]);
+  }
 }
 
 

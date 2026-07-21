@@ -13,7 +13,12 @@ export const DeviceService = {
 
   getDeviceDetails(deviceId) {
     const devices = this.getDevices();
-    return devices.find(d => d.id === deviceId) || null;
+    if (!deviceId) return null;
+    const cleanId = deviceId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    return devices.find(d => {
+      const dClean = d.id.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      return d.id === deviceId || dClean === cleanId || dClean.includes(cleanId) || cleanId.includes(dClean);
+    }) || null;
   },
 
   // Admin Device management actions

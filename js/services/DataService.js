@@ -1,6 +1,6 @@
 // DataService.js - Centralized Data Persistence & Simulation Engine Facade for CrowdSense TN Admin
 // Delegated directly to the central shared services architecture.
-import { SharedStore, KEYS } from './SharedStore';
+import { SharedStore, KEYS, saveOrUpdateTelemetry } from './SharedStore';
 import { BusService } from './BusService';
 import { RouteService } from './RouteService';
 import { DeviceService } from './DeviceService';
@@ -14,42 +14,47 @@ const listeners = {};
 // Initial Simulation Setup
 function initializeSimulation() {
   const buses = BusService.getAllBuses();
+  const existingTracking = SharedStore.getItem(KEYS.TRACKING) || {};
+  const existingOccupancy = SharedStore.getItem(KEYS.OCCUPANCY) || {};
+
   buses.forEach((bus, i) => {
-    // Distribute buses along route
+    // Distribute buses along route if not in store
     const initialProgress = 15 + (i * 15);
     
-    // Tracking simulation details
-    trackingStates[bus.id] = {
-      busId: bus.id,
-      progress: initialProgress,
-      speed: bus.status === "Active" ? 35 + Math.floor(Math.random() * 20) : 0,
-      currentStop: bus.source,
-      nextStop: bus.destination,
-      eta: bus.status === "Active" ? 12 + (i * 3) : 0,
-      lat: 13.0064,
-      lng: 80.2577,
-      health: bus.status === "Active" ? "Good" : "Disconnected",
-      lastUpdated: new Date()
-    };
+    if (!existingTracking[bus.id]) {
+      trackingStates[bus.id] = {
+        busId: bus.id,
+        progress: initialProgress,
+        speed: bus.status === "Active" ? 35 + Math.floor(Math.random() * 20) : 0,
+        currentStop: bus.source,
+        nextStop: bus.destination,
+        eta: bus.status === "Active" ? 12 + (i * 3) : 0,
+        lat: 13.0064,
+        lng: 80.2577,
+        health: bus.status === "Active" ? "Good" : "Disconnected",
+        lastUpdated: new Date()
+      };
+    } else {
+      trackingStates[bus.id] = existingTracking[bus.id];
+    }
 
-    // Passenger Occupancy details
-    let passengers = 10 + Math.floor(Math.random() * (bus.capacity - 15));
-    if (bus.id === "19B") passengers = 56; // 93% High
-    if (bus.id === "47A") passengers = 42; // 70% Medium
-    if (bus.id === "23C") passengers = 18; // 30% Low
+    if (!existingOccupancy[bus.id]) {
+      let passengers = 10 + Math.floor(Math.random() * (bus.capacity - 15));
 
-    occupancyStates[bus.id] = {
-      busId: bus.id,
-      passengers: passengers,
-      capacity: bus.capacity,
-      percentage: Math.round((passengers / bus.capacity) * 100),
-      lastUpdated: new Date()
-    };
+      occupancyStates[bus.id] = {
+        busId: bus.id,
+        passengers: passengers,
+        capacity: bus.capacity,
+        percentage: Math.round((passengers / bus.capacity) * 100),
+        lastUpdated: new Date()
+      };
+    } else {
+      occupancyStates[bus.id] = existingOccupancy[bus.id];
+    }
 
     updateBusMetrics(bus.id);
   });
   
-  // Write to shared database keys
   SharedStore.setItem(KEYS.TRACKING, trackingStates);
   SharedStore.setItem(KEYS.OCCUPANCY, occupancyStates);
 }
@@ -127,7 +132,15 @@ function updateBusMetrics(busId) {
 // Start simulation loop (running continuously in background)
 function startSimulationLoop() {
   setInterval(() => {
+    // Sync with SharedStore before applying simulated progress
+    const storedTracking = SharedStore.getItem(KEYS.TRACKING);
+    const storedOccupancy = SharedStore.getItem(KEYS.OCCUPANCY);
+    if (storedTracking) trackingStates = { ...trackingStates, ...storedTracking };
+    if (storedOccupancy) occupancyStates = { ...occupancyStates, ...storedOccupancy };
+
     const buses = BusService.getAllBuses();
+    const devices = DeviceService.getDevices();
+
     buses.forEach(bus => {
       if (bus.status !== "Active") return;
       
@@ -135,42 +148,53 @@ function startSimulationLoop() {
       const occupancy = occupancyStates[bus.id];
       if (!tracking || !occupancy) return;
 
-      // Update location progress
-      tracking.progress += 0.4 + Math.random() * 0.4;
-      if (tracking.progress >= 100) {
-        tracking.progress = 0;
-      }
-      tracking.lastUpdated = new Date();
+      // Check if bus is attached to a real hardware node or has recent real updates
+      const linkedDevice = devices.find(d => d.busId === bus.id);
+      const isRealHardware = linkedDevice && (linkedDevice.isRealHardware || linkedDevice.id === "70:4B:CA:46:82:90" || linkedDevice.id.includes("70:4B:CA"));
 
-      // Occasionally adjust passenger load
-      if (Math.random() < 0.3) {
-        const change = Math.floor(Math.random() * 5) - 2; // -2 to +2
-        occupancy.passengers = Math.max(5, Math.min(occupancy.capacity, occupancy.passengers + change));
-        occupancy.percentage = Math.round((occupancy.passengers / occupancy.capacity) * 100);
+      if (isRealHardware) {
+        // Real hardware node connected - DO NOT overwrite with simulated mock numbers!
+        // Allow physical ESP32 hardware (70:4B:CA:46:82:90) to post genuine sensor data.
+        return;
+      } else {
+        // Update location progress only if not real hardware
+        tracking.progress += 0.4 + Math.random() * 0.4;
+        if (tracking.progress >= 100) {
+          tracking.progress = 0;
+        }
+        tracking.lastUpdated = new Date();
 
-        // Auto trigger high occupancy alert
-        const settings = DataService.getSettings();
-        if (occupancy.percentage >= settings.highOccupancyThreshold) {
-          const alertExists = NotificationService.getAlerts().some(a => a.busId === bus.id && a.type === "High Occupancy" && a.status === "Unread");
-          if (!alertExists) {
-            NotificationService.createAlert({
-              type: "High Occupancy",
-              title: `Bus ${bus.id} High Occupancy Detected`,
-              desc: `Bus ${bus.id} passenger counts reached ${occupancy.percentage}% capacity (${occupancy.passengers}/${occupancy.capacity} passengers).`,
-              busId: bus.id,
-              priority: occupancy.percentage >= settings.criticalOccupancyThreshold ? "Critical" : "High"
-            });
+        // Occasionally adjust passenger load
+        if (Math.random() < 0.3) {
+          const change = Math.floor(Math.random() * 5) - 2; // -2 to +2
+          occupancy.passengers = Math.max(5, Math.min(occupancy.capacity, occupancy.passengers + change));
+          occupancy.percentage = Math.round((occupancy.passengers / occupancy.capacity) * 100);
+
+          // Auto trigger high occupancy alert
+          const settings = DataService.getSettings();
+          if (occupancy.percentage >= settings.highOccupancyThreshold) {
+            const alertExists = NotificationService.getAlerts().some(a => a.busId === bus.id && a.type === "High Occupancy" && a.status === "Unread");
+            if (!alertExists) {
+              NotificationService.createAlert({
+                type: "High Occupancy",
+                title: `Bus ${bus.id} High Occupancy Detected`,
+                desc: `Bus ${bus.id} passenger counts reached ${occupancy.percentage}% capacity (${occupancy.passengers}/${occupancy.capacity} passengers).`,
+                busId: bus.id,
+                priority: occupancy.percentage >= settings.criticalOccupancyThreshold ? "Critical" : "High"
+              });
+            }
           }
         }
+        updateBusMetrics(bus.id);
       }
-
-      updateBusMetrics(bus.id);
     });
 
     // Device online/offline simulation toggles
-    const devices = DeviceService.getDevices();
     let devicesChanged = false;
     devices.forEach(device => {
+      // Do not randomly toggle real hardware nodes (like 70:4B:CA:46:82:90)
+      if (device.isRealHardware || device.id === "70:4B:CA:46:82:90" || device.id.includes("70:4B:CA")) return;
+
       // 2% chance device changes status
       if (Math.random() < 0.02) {
         const statuses = ["Online", "Online", "Online", "Offline", "Maintenance", "Fault"];

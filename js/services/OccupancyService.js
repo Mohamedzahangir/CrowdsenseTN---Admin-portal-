@@ -2,33 +2,10 @@
 // Consumes the centralized SharedStore database and defines clear integration hooks.
 import { SharedStore, KEYS } from './SharedStore';
 import { BusService } from './BusService';
+import { supabase } from './supabaseClient';
 
 const listeners = {};
 let localOccupancyStates = {};
-let fallbackOccInterval = null;
-
-function initializeOccupancy() {
-  const allBuses = BusService.getAllBuses();
-  allBuses.forEach(bus => {
-    let passengers = 20 + Math.floor(Math.random() * (bus.capacity - 25));
-    if (bus.id === "47A") passengers = 42;
-    if (bus.id === "19B") passengers = 54;
-    if (bus.id === "23C") passengers = 28;
-
-    localOccupancyStates[bus.id] = {
-      busId: bus.id,
-      passengers: passengers,
-      capacity: bus.capacity,
-      percentage: Math.round((passengers / bus.capacity) * 100),
-      status: "Low Crowd",
-      class: "status-chip-low",
-      colorHex: "#22c55e",
-      lastUpdated: new Date()
-    };
-    updateCrowdStatus(bus.id);
-  });
-  SharedStore.setItem(KEYS.OCCUPANCY, localOccupancyStates);
-}
 
 function updateCrowdStatus(busId) {
   const state = localOccupancyStates[busId];
@@ -44,52 +21,32 @@ function updateCrowdStatus(busId) {
     state.status = "Medium Crowd";
     state.class = "status-chip-medium";
     state.colorHex = "#eab308";
-  } else {
+  } else if (state.percentage <= 100) {
     state.status = "High Crowd";
     state.class = "status-chip-high";
     state.colorHex = "#ef4444";
+  } else {
+    state.status = "Overcrowded";
+    state.class = "status-chip-overcrowded";
+    state.colorHex = "#991b1b";
   }
 }
 
-// Start occupancy sync ticker
-if (typeof window !== 'undefined') {
+function loadFromStore() {
   const sharedOcc = SharedStore.getItem(KEYS.OCCUPANCY);
-  if (!sharedOcc) {
-    initializeOccupancy();
-  } else {
+  if (sharedOcc) {
     localOccupancyStates = sharedOcc;
   }
+}
 
-  // Ticker: Pull latest occupancy from shared database and trigger subscribers
-  setInterval(() => {
-    const sharedData = SharedStore.getItem(KEYS.OCCUPANCY);
-    if (sharedData) {
-      // Determine if Admin is actively updating
-      let isAdminActive = false;
-      const firstBusId = Object.keys(sharedData)[0];
-      if (firstBusId && sharedData[firstBusId].lastUpdated) {
-        const lastUpd = new Date(sharedData[firstBusId].lastUpdated).getTime();
-        const diff = Date.now() - lastUpd;
-        if (diff < 20000) {
-          isAdminActive = true;
-        }
-      }
+// Start occupancy sync listener
+if (typeof window !== 'undefined') {
+  loadFromStore();
 
-      if (isAdminActive) {
-        localOccupancyStates = sharedData;
-        if (fallbackOccInterval) {
-          clearInterval(fallbackOccInterval);
-          fallbackOccInterval = null;
-        }
-      } else {
-        if (!fallbackOccInterval) {
-          startLocalFallbackSimulation();
-        }
-      }
-
-      triggerListeners();
-    }
-  }, 2000);
+  window.addEventListener("crowdsense_store_updated", () => {
+    loadFromStore();
+    triggerListeners();
+  });
 }
 
 function triggerListeners() {
@@ -102,58 +59,51 @@ function triggerListeners() {
   });
 }
 
-function startLocalFallbackSimulation() {
-  fallbackOccInterval = setInterval(() => {
-    const buses = BusService.getAllBuses();
-    buses.forEach(bus => {
-      if (bus.status !== "Active") return;
-      const state = localOccupancyStates[bus.id];
-      if (!state) return;
-
-      const change = Math.floor(Math.random() * 7) - 3;
-      state.passengers = Math.max(5, Math.min(state.capacity, state.passengers + change));
-      state.lastUpdated = new Date();
-      updateCrowdStatus(bus.id);
-    });
-
-    SharedStore.setItem(KEYS.OCCUPANCY, localOccupancyStates);
-  }, 10000);
-}
-
 export const OccupancyService = {
-  // Synchronous contract to maintain backward-compatibility with UI modules.
-  // ESP32 Integration: Swap with ESP32 occupancy counting hardware APIs.
-
   getOccupancy(busId) {
-    // API integration point: return await fetch(`/api/occupancy/${busId}`).then(r => r.json());
+    loadFromStore();
     return localOccupancyStates[busId] || null;
   },
 
   getAllOccupancyStates() {
+    loadFromStore();
     return localOccupancyStates;
   },
 
-  updateOccupancy(busId, passengers) {
-    // ESP32 occupancy device webhook integration point:
-    // fetch(`/api/occupancy/${busId}`, { method: 'POST', body: JSON.stringify({ passengers }) });
-    if (!localOccupancyStates[busId]) {
-      const bus = BusService.getBusDetails(busId);
-      localOccupancyStates[busId] = {
-        busId: busId,
-        passengers: passengers,
-        capacity: bus ? bus.capacity : 60,
-        percentage: 0,
-        status: "Low Crowd",
-        class: "status-chip-low",
-        colorHex: "#22c55e",
-        lastUpdated: new Date()
-      };
-    } else {
-      localOccupancyStates[busId].passengers = passengers;
-      localOccupancyStates[busId].lastUpdated = new Date();
-    }
-    updateCrowdStatus(busId);
+  async updateOccupancy(busId, passengers) {
+    loadFromStore();
+    const bus = BusService.getBusDetails(busId);
+    const capacity = bus ? bus.capacity : 60;
+    const pct = Math.round((passengers / capacity) * 100);
+
+    const newState = {
+      busId: busId,
+      passengers: passengers,
+      capacity: capacity,
+      percentage: pct,
+      status: pct <= 40 ? "Low Crowd" : pct <= 75 ? "Medium Crowd" : "High Crowd",
+      class: pct <= 40 ? "status-chip-low" : pct <= 75 ? "status-chip-medium" : "status-chip-high",
+      colorHex: pct <= 40 ? "#22c55e" : pct <= 75 ? "#eab308" : "#ef4444",
+      lastUpdated: new Date()
+    };
+
+    localOccupancyStates[busId] = newState;
     SharedStore.setItem(KEYS.OCCUPANCY, localOccupancyStates);
+
+    // Two-way sync: Push to Supabase live_bus_status
+    if (supabase) {
+      const { error } = await supabase
+        .from('live_bus_status')
+        .upsert({
+          bus_id: busId,
+          passengers: passengers,
+          capacity: capacity,
+          percentage: pct,
+          last_updated: new Date()
+        }, { onConflict: 'bus_id' });
+
+      if (error) console.error("Error updating occupancy in Supabase live_bus_status:", error);
+    }
   },
 
   subscribe(busId, callback) {
@@ -162,6 +112,7 @@ export const OccupancyService = {
     }
     listeners[busId].push(callback);
     
+    loadFromStore();
     if (busId === 'all') {
       callback(localOccupancyStates);
     } else if (localOccupancyStates[busId]) {

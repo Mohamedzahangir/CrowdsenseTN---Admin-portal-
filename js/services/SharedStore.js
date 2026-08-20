@@ -16,16 +16,13 @@ export const KEYS = {
 
 export const defaultRoutes = [
   {
-    number: "47A", name: "ICF to Thiruvanmiyur", source: "ICF", destination: "Thiruvanmiyur",
+    number: "47A", name: "Vellore Express Route", source: "Vellore Bus Terminus", destination: "Katpadi Jn.",
     stops: [
-      { name: "ICF", distance: 0, scheduledTime: "09:00 AM", lat: 13.0977, lng: 80.2081, fareToNextStop: 5 },
-      { name: "Anna Nagar Roundtana", distance: 3.2, scheduledTime: "09:15 AM", lat: 13.0850, lng: 80.2119, fareToNextStop: 8 },
-      { name: "Nungambakkam Railway Station", distance: 7.5, scheduledTime: "09:30 AM", lat: 13.0645, lng: 80.2365, fareToNextStop: 7 },
-      { name: "Valluvar Kottam", distance: 9.1, scheduledTime: "09:40 AM", lat: 13.0560, lng: 80.2415, fareToNextStop: 6 },
-      { name: "T. Nagar (Panagal Park)", distance: 11.5, scheduledTime: "09:55 AM", lat: 13.0405, lng: 80.2337, fareToNextStop: 10 },
-      { name: "Saidapet", distance: 14.2, scheduledTime: "10:10 AM", lat: 13.0210, lng: 80.2227, fareToNextStop: 8 },
-      { name: "Madhya Kailash", distance: 17.8, scheduledTime: "10:25 AM", lat: 13.0075, lng: 80.2435, fareToNextStop: 5 },
-      { name: "Thiruvanmiyur", distance: 19.5, scheduledTime: "10:35 AM", lat: 12.9830, lng: 80.2516, fareToNextStop: 0 }
+      { name: "Vellore Bus Terminus", distance: 0, scheduledTime: "09:15 AM", lat: 12.9238, lng: 79.1352, fareToNextStop: 5 },
+      { name: "Vellore Fort", distance: 2.5, scheduledTime: "09:25 AM", lat: 12.9275, lng: 79.1302, fareToNextStop: 5 },
+      { name: "Green Circle", distance: 5.8, scheduledTime: "09:40 AM", lat: 12.9372, lng: 79.1355, fareToNextStop: 5 },
+      { name: "Silk Mill", distance: 9.0, scheduledTime: "09:55 AM", lat: 12.9460, lng: 79.1415, fareToNextStop: 5 },
+      { name: "Katpadi Jn.", distance: 12.0, scheduledTime: "10:15 AM", lat: 12.9680, lng: 79.1378, fareToNextStop: 0 }
     ]
   },
   {

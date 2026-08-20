@@ -123,7 +123,7 @@ export const DashboardPage = {
   mount() {
     // 1. Initialize Reused LiveTracking Map
     LiveTracking.init("dashboard-map", [13.0064, 80.2577], 11);
-    LiveTracking.drawRoutes(DataService.getRoutes());
+    LiveTracking.drawRoutes([]);
 
     // Refresh action
     document.getElementById("btn-refresh-dashboard")?.addEventListener("click", () => {
@@ -165,7 +165,6 @@ export const DashboardPage = {
   updateUI() {
     const state = {
       buses: DataService.getBuses(),
-      routes: DataService.getRoutes(),
       devices: DataService.getDevices(),
       alerts: DataService.getAlerts(),
       tracking: DataService.getLiveState().tracking,
@@ -206,7 +205,7 @@ export const DashboardPage = {
 
     const totalBuses = state.buses.length;
     const activeBuses = state.buses.filter(b => b.status === "Active").length;
-    const totalRoutes = state.routes.length;
+    const totalRoutes = 0; // Routes removed
     const onlineDevices = state.devices.filter(d => d.status === "Online").length;
     
     let currentPassengers = 0;

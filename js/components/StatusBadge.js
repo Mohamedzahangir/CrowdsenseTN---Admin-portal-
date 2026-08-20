@@ -5,7 +5,7 @@ export const StatusBadge = {
     let label = "Low Crowd";
     let chipClass = "status-chip-low";
     let color = "#22c55e"; // green
-    
+
     if (percentage > 40 && percentage <= 75) {
       label = "Medium Crowd";
       chipClass = "status-chip-medium";

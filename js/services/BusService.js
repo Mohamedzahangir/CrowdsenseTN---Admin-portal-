@@ -39,7 +39,8 @@ export const BusService = {
         capacity: bus.capacity,
         status: bus.status,
         device_id: bus.deviceId,
-        driver_name: bus.driverName
+        driver_name: bus.driverName,
+        stops: bus.stops || []
       }]);
       if (error) console.error("Error inserting bus into Supabase:", error);
     }
@@ -64,6 +65,7 @@ export const BusService = {
     if (updatedFields.status !== undefined) dbFields.status = updatedFields.status;
     if (updatedFields.deviceId !== undefined) dbFields.device_id = updatedFields.deviceId;
     if (updatedFields.driverName !== undefined) dbFields.driver_name = updatedFields.driverName;
+    if (updatedFields.stops !== undefined) dbFields.stops = updatedFields.stops;
 
     if (supabase) {
       const { error } = await supabase.from('buses').update(dbFields).eq('id', busId);

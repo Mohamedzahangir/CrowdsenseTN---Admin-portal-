@@ -5,6 +5,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { OperationsPage } from './pages/OperationsPage';
 import { BusesPage } from './pages/BusesPage';
 import { RoutesPage } from './pages/RoutesPage';
+
 import { DevicesPage } from './pages/DevicesPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { NotificationsPage } from './pages/NotificationsPage';
@@ -19,6 +20,7 @@ const routes = {
   "/operations": OperationsPage,
   "/buses": BusesPage,
   "/routes": RoutesPage,
+
   "/devices": DevicesPage,
   "/analytics": AnalyticsPage,
   "/notifications": NotificationsPage,

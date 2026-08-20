@@ -118,7 +118,7 @@ export const DevicesPage = {
     let filtered = state.devices;
     if (currentSearch) {
       const q = currentSearch.toLowerCase();
-      filtered = filtered.filter(d => 
+      filtered = filtered.filter(d =>
         d.id.toLowerCase().includes(q) ||
         (d.busId && d.busId.toLowerCase().includes(q))
       );
@@ -143,7 +143,7 @@ export const DevicesPage = {
       else if (device.status === "Maintenance") badgeClass = "badge-warning";
       else if (device.status === "Fault") badgeClass = "badge-danger";
 
-      const linkedBus = device.busId 
+      const linkedBus = device.busId
         ? `<span class="td-primary">Bus Route ${device.busId}</span>`
         : `<span class="text-muted text-sm">Unassigned</span>`;
 
@@ -349,18 +349,18 @@ export const DevicesPage = {
     });
 
     document.getElementById("btn-cancel-flash")?.addEventListener("click", () => modal.close());
-    
+
     document.getElementById("btn-do-flash")?.addEventListener("click", () => {
       const btn = document.getElementById("btn-do-flash");
       btn.disabled = true;
       btn.textContent = "Flashing...";
-      
+
       const bar = document.getElementById("flash-progress-bar");
       const fill = document.getElementById("flash-progress-fill");
       const statusText = document.getElementById("flash-status");
-      
+
       bar?.classList.remove("hidden");
-      
+
       let progress = 0;
       const interval = setInterval(() => {
         progress += 10;
@@ -370,7 +370,7 @@ export const DevicesPage = {
         if (progress >= 100) {
           clearInterval(interval);
           if (statusText) statusText.textContent = `Update complete. Rebooting ESP32 Node...`;
-          
+
           setTimeout(() => {
             DataService.updateDevice(deviceId, { fwVersion: "v1.5.0", status: "Online" });
             ToastComponent.show("Firmware Updated", "success", `ESP32 Node ${deviceId} flashed to v1.5.0`);

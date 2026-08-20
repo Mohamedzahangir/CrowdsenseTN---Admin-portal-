@@ -88,7 +88,7 @@ export const OperationsPage = {
 
     // 1. Initialize Reused LiveTracking Map
     LiveTracking.init("ops-map", [13.0064, 80.2577], 12);
-    LiveTracking.drawRoutes(DataService.getRoutes());
+    LiveTracking.drawRoutes([]);
 
     // Subscribe to DataService for live updates
     dataSubscription = (state) => {
@@ -267,7 +267,6 @@ export const OperationsPage = {
     const bus = state.buses.find(b => b.id === selectedBusId);
     const tracking = state.tracking[selectedBusId];
     const occupancy = state.occupancy[selectedBusId];
-    const route = state.routes.find(r => r.number === selectedBusId);
     const device = state.devices.find(d => d.busId === selectedBusId);
 
     if (!bus || !tracking || !occupancy) {
@@ -289,11 +288,11 @@ export const OperationsPage = {
 
     // Build Stops timeline exactly like the Customer Portal bus-details timeline
     let stopsHtml = "";
-    if (route && route.stops) {
+    if (bus && bus.stops) {
       const lastIdx = tracking.lastStopIndex;
       const nextIdx = tracking.nextStopIndex;
 
-      stopsHtml = route.stops.map((stop, index) => {
+      stopsHtml = bus.stops.map((stop, index) => {
         let nodeClass = "relative pl-10 pb-8 railway-line";
         let nodeDot = "";
         let contentClass = "flex justify-between items-start";
@@ -302,7 +301,7 @@ export const OperationsPage = {
 
         if (index === 0) {
           stopLabel = "Source";
-        } else if (index === route.stops.length - 1) {
+        } else if (index === bus.stops.length - 1) {
           stopLabel = "Destination";
           nodeClass = "relative pl-10 pb-8";
         }
@@ -317,7 +316,7 @@ export const OperationsPage = {
           `;
           contentClass += " opacity-70";
           estTimeLabel = `<span class="text-body-sm text-on-surface-variant font-semibold" style="font-size:11px; color:var(--color-text-muted);">Passed</span>`;
-          if (index > 0 && index < route.stops.length - 1) {
+          if (index > 0 && index < bus.stops.length - 1) {
             stopLabel = "Departed";
           }
         } 
@@ -341,8 +340,8 @@ export const OperationsPage = {
             <div class="absolute left-0 top-1 w-6 h-6 bg-surface-container-high border-2 border-outline-variant rounded-full z-10" style="width:20px; height:20px; border-radius:50%; background:var(--color-surface-container); border:2px solid var(--color-border); left:-10px;"></div>
           `;
           contentClass += " opacity-50";
-          stopLabel = stopLabel || `Distance: ${Math.round((stop.distance - (tracking.progress/100)*route.stops[route.stops.length-1].distance)*10)/10} km`;
-          estTimeLabel = `<span class="text-body-sm text-on-surface" style="font-size:11px;">${stop.scheduledTime}</span>`;
+          stopLabel = stopLabel || `Distance: ${Math.round((stop.distance - (tracking.progress/100)*bus.stops[bus.stops.length-1].distance)*10)/10} km`;
+          estTimeLabel = `<span class="text-body-sm text-on-surface" style="font-size:11px;">${stop.scheduledTime || ''}</span>`;
         }
 
         const timeCrossOut = index <= lastIdx ? `line-through` : '';
@@ -356,13 +355,13 @@ export const OperationsPage = {
                 <p class="text-body-sm text-on-surface-variant" style="font-size:11px; color:var(--color-text-secondary); margin:2px 0 0 0;">${stopLabel}</p>
               </div>
               <div class="text-right" style="text-align:right;">
-                <span class="block font-label-caps text-label-caps text-on-secondary-container ${timeCrossOut}" style="font-size:10px; color:var(--color-text-muted); text-transform:uppercase; font-weight:600; display:block;">${stop.scheduledTime}</span>
+                <span class="block font-label-caps text-label-caps text-on-secondary-container ${timeCrossOut}" style="font-size:10px; color:var(--color-text-muted); text-transform:uppercase; font-weight:600; display:block;">${stop.scheduledTime || ''}</span>
                 ${estTimeLabel}
               </div>
             </div>
           </div>
           
-          ${index === lastIdx && lastIdx !== route.stops.length - 1 ? `
+          ${index === lastIdx && lastIdx !== bus.stops.length - 1 ? `
             <div class="relative pl-10 h-0 z-20" style="position:relative; height:0; z-index:20; margin-left:20px;">
               <div class="absolute -left-3 -top-3 flex items-center justify-center bg-white rounded-full p-1 shadow-md border-2 border-primary" style="position:absolute; left:-12px; top:-12px; background:white; border-radius:50%; padding:4px; border:2px solid var(--color-primary); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-sm);">
                 <span class="material-symbols-outlined text-primary text-[16px] pulse-live" style="font-size:16px; color:var(--color-primary);" class="pulse-live">directions_bus</span>

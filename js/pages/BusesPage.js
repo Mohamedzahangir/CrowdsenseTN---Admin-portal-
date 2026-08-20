@@ -10,6 +10,7 @@ let currentStatusFilter = "All";
 let currentOccupancyFilter = "All";
 
 export const BusesPage = {
+
   render() {
     return `
       <div class="page-header fade-in">
@@ -120,7 +121,6 @@ export const BusesPage = {
   updateTable() {
     const state = {
       buses: DataService.getBuses(),
-      routes: DataService.getRoutes(),
       devices: DataService.getDevices(),
       alerts: DataService.getAlerts(),
       tracking: DataService.getLiveState().tracking,
@@ -138,7 +138,7 @@ export const BusesPage = {
     // Search query filter
     if (currentSearch) {
       const q = currentSearch.toLowerCase();
-      filtered = filtered.filter(b => 
+      filtered = filtered.filter(b =>
         b.id.toLowerCase().includes(q) ||
         b.number.toLowerCase().includes(q) ||
         b.name.toLowerCase().includes(q) ||
@@ -179,7 +179,7 @@ export const BusesPage = {
       const occ = state.occupancy[bus.id];
       const tracking = state.tracking[bus.id];
       const loadText = occ ? `${occ.passengers} / ${bus.capacity} (${occ.percentage}%)` : `0 / ${bus.capacity} (0%)`;
-      
+
       let badgeClass = bus.status === "Active" ? "badge-success" : "badge-neutral";
       let deviceBadge = bus.deviceId ? `<code style="background:#f1f5f9; padding:2px 4px; border-radius:3px">${bus.deviceId}</code>` : `<span class="text-muted">None</span>`;
 
@@ -219,18 +219,18 @@ export const BusesPage = {
   },
 
   openAddBusModal() {
-    const routes = DataService.getRoutes();
-    const routeOptionsHtml = routes.map(r => `<option value="${r.number}">${r.number} - ${r.source} to ${r.destination}</option>`).join("");
-    
     const devices = DataService.getDevices().filter(d => !d.busId); // free devices
     const deviceOptionsHtml = `<option value="">None</option>` + devices.map(d => `<option value="${d.id}">${d.id}</option>`).join("");
+
+    const routes = DataService.getRoutes();
+    const routeOptionsHtml = `<option value="">Select a Route...</option>` + routes.map(r => `<option value="${r.number}">${r.number} - ${r.source} to ${r.destination}</option>`).join("");
 
     const bodyHtml = `
       <form id="form-add-bus">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Bus Number (Route ID)</label>
-            <input type="text" name="id" class="form-control" placeholder="e.g. 500" required>
+            <label class="form-label">Bus ID (Identifier)</label>
+            <input type="text" name="id" class="form-control" placeholder="e.g. BUS_001" required>
           </div>
           <div class="form-group">
             <label class="form-label">Registration Plate</label>
@@ -242,6 +242,14 @@ export const BusesPage = {
             <label class="form-label">Vehicle Name</label>
             <input type="text" name="name" class="form-control" placeholder="e.g. Broad City Fast" required>
           </div>
+          <div class="form-group">
+            <label class="form-label">Assign Route</label>
+            <select name="routeId" class="form-control" required>
+              ${routeOptionsHtml}
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Vehicle Type</label>
             <select name="type" class="form-control">
@@ -262,13 +270,8 @@ export const BusesPage = {
             <input type="text" name="driverName" class="form-control" placeholder="Driver full name" required>
           </div>
         </div>
+        </div>
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Linked Route Route</label>
-            <select name="routeNum" class="form-control">
-              ${routeOptionsHtml}
-            </select>
-          </div>
           <div class="form-group">
             <label class="form-label">Linked ESP32 IoT Node</label>
             <select name="deviceId" class="form-control">
@@ -298,7 +301,7 @@ export const BusesPage = {
     });
 
     document.getElementById("btn-cancel-add")?.addEventListener("click", () => modal.close());
-    
+
     document.getElementById("btn-save-add")?.addEventListener("click", () => {
       const form = document.getElementById("form-add-bus");
       if (!form.checkValidity()) {
@@ -307,8 +310,12 @@ export const BusesPage = {
       }
 
       const formData = new FormData(form);
+      const routeId = formData.get("routeId");
+      const selectedRoute = DataService.getRoutes().find(r => r.number === routeId);
+
       const newBus = {
         id: formData.get("id"),
+        routeId: routeId,
         number: formData.get("number"),
         name: formData.get("name"),
         type: formData.get("type"),
@@ -316,16 +323,9 @@ export const BusesPage = {
         driverName: formData.get("driverName"),
         status: formData.get("status"),
         deviceId: formData.get("deviceId") || "",
-        // Assign source/destination based on route selection
-        source: "Depot",
-        destination: "Terminal"
+        source: selectedRoute ? selectedRoute.source : "Unknown",
+        destination: selectedRoute ? selectedRoute.destination : "Unknown"
       };
-
-      const selectedRoute = routes.find(r => r.number === formData.get("routeNum"));
-      if (selectedRoute) {
-        newBus.source = selectedRoute.source;
-        newBus.destination = selectedRoute.destination;
-      }
 
       // If device linked, update device
       const dId = formData.get("deviceId");
@@ -345,17 +345,17 @@ export const BusesPage = {
     const bus = DataService.getBuses().find(b => b.id === busId);
     if (!bus) return;
 
-    const routes = DataService.getRoutes();
-    const routeOptionsHtml = routes.map(r => `<option value="${r.number}" ${r.number === bus.id ? "selected" : ""}>${r.number} - ${r.source} to ${r.destination}</option>`).join("");
-    
     const devices = DataService.getDevices().filter(d => !d.busId || d.busId === bus.id);
     const deviceOptionsHtml = `<option value="">None</option>` + devices.map(d => `<option value="${d.id}" ${d.id === bus.deviceId ? "selected" : ""}>${d.id}</option>`).join("");
+
+    const routes = DataService.getRoutes();
+    const routeOptionsHtml = `<option value="">Select a Route...</option>` + routes.map(r => `<option value="${r.number}" ${r.number === bus.routeId ? "selected" : ""}>${r.number} - ${r.source} to ${r.destination}</option>`).join("");
 
     const bodyHtml = `
       <form id="form-edit-bus">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Bus Number (Route ID)</label>
+            <label class="form-label">Bus ID (Identifier)</label>
             <input type="text" name="id" class="form-control" value="${bus.id}" disabled>
           </div>
           <div class="form-group">
@@ -368,6 +368,14 @@ export const BusesPage = {
             <label class="form-label">Vehicle Name</label>
             <input type="text" name="name" class="form-control" value="${bus.name}" required>
           </div>
+          <div class="form-group">
+            <label class="form-label">Assign Route</label>
+            <select name="routeId" class="form-control" required>
+              ${routeOptionsHtml}
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Vehicle Type</label>
             <select name="type" class="form-control">
@@ -388,13 +396,8 @@ export const BusesPage = {
             <input type="text" name="driverName" class="form-control" value="${bus.driverName}" required>
           </div>
         </div>
+        </div>
         <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Linked Route Route</label>
-            <select name="routeNum" class="form-control" disabled>
-              ${routeOptionsHtml}
-            </select>
-          </div>
           <div class="form-group">
             <label class="form-label">Linked ESP32 IoT Node</label>
             <select name="deviceId" class="form-control">
@@ -424,7 +427,7 @@ export const BusesPage = {
     });
 
     document.getElementById("btn-cancel-edit")?.addEventListener("click", () => modal.close());
-    
+
     document.getElementById("btn-save-edit")?.addEventListener("click", () => {
       const form = document.getElementById("form-edit-bus");
       if (!form.checkValidity()) {
@@ -436,14 +439,20 @@ export const BusesPage = {
       const previousDevice = bus.deviceId;
       const newDevice = formData.get("deviceId") || "";
 
+      const routeId = formData.get("routeId");
+      const selectedRoute = DataService.getRoutes().find(r => r.number === routeId);
+
       const updatedBus = {
+        routeId: routeId,
         number: formData.get("number"),
         name: formData.get("name"),
         type: formData.get("type"),
         capacity: parseInt(formData.get("capacity")),
         driverName: formData.get("driverName"),
         status: formData.get("status"),
-        deviceId: newDevice
+        deviceId: newDevice,
+        source: selectedRoute ? selectedRoute.source : bus.source,
+        destination: selectedRoute ? selectedRoute.destination : bus.destination
       };
 
       // Handle Device Link updates
@@ -481,7 +490,6 @@ export const BusesPage = {
     // Quick popup to view details
     const state = {
       buses: DataService.getBuses(),
-      routes: DataService.getRoutes(),
       devices: DataService.getDevices(),
       tracking: DataService.getLiveState().tracking,
       occupancy: DataService.getLiveState().occupancy
@@ -490,11 +498,14 @@ export const BusesPage = {
     const bus = state.buses.find(b => b.id === busId);
     const tracking = state.tracking[busId];
     const occupancy = state.occupancy[busId];
-    const route = state.routes.find(r => r.number === busId);
-    
+
     if (!bus) return;
 
-    const stopList = route ? route.stops.map(s => `<li>${s.name} (${s.scheduledTime})</li>`).join("") : "No routes linked.";
+    const routes = DataService.getRoutes();
+    const route = routes.find(r => r.number === bus.routeId);
+    const stops = route ? route.stops : [];
+
+    const stopList = stops && stops.length > 0 ? stops.map(s => `<li>${s.name} (Fare: ₹${s.fareToNextStop || 0})</li>`).join("") : "No route/stops configured.";
     const lat = tracking ? tracking.lat : "N/A";
     const lng = tracking ? tracking.lng : "N/A";
 

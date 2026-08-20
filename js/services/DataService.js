@@ -1,8 +1,8 @@
 // DataService.js - Centralized Data Persistence & Simulation Engine Facade for CrowdSense TN Admin
 // Delegated directly to the central shared services architecture.
-import { SharedStore, KEYS, saveOrUpdateTelemetry } from './SharedStore';
+import { SharedStore, KEYS, defaultRoutes, saveOrUpdateTelemetry } from './SharedStore';
 import { BusService } from './BusService';
-import { RouteService } from './RouteService';
+
 import { DeviceService } from './DeviceService';
 import { NotificationService } from './NotificationService';
 
@@ -62,7 +62,6 @@ function initializeSimulation() {
 // Compute live routes/coordinates
 function updateBusMetrics(busId) {
   const bus = BusService.getAllBuses().find(b => b.id === busId);
-  const route = RouteService.getAllRoutes().find(r => r.number === busId);
   const tracking = trackingStates[busId];
   const occupancy = occupancyStates[busId];
   
@@ -74,6 +73,8 @@ function updateBusMetrics(busId) {
   }
 
   // Handle stops traversal
+  const routes = SharedStore.getItem(KEYS.ROUTES) || [];
+  const route = routes.find(r => r.number === (bus.routeId || bus.id));
   const stops = route ? route.stops : [];
   if (stops.length === 0) return;
 
@@ -247,7 +248,7 @@ function notifySubscribers() {
       try {
         callback({
           buses: BusService.getAllBuses(),
-          routes: RouteService.getAllRoutes(),
+          routes: DataService.getRoutes(),
           devices: DeviceService.getDevices(),
           alerts: NotificationService.getAlerts(),
           tracking: trackingStates,
@@ -277,6 +278,44 @@ export const DataService = {
       if (occupancy) occupancyStates = occupancy;
       notifySubscribers();
     });
+  },
+
+  // Route CRUD
+  getRoutes() {
+    let routes = SharedStore.getItem(KEYS.ROUTES);
+    // Invalidate old cache based on a version flag to force the new realistic stops
+    const version = SharedStore.getItem("ROUTE_VERSION_2");
+    if (!routes || routes.length === 0 || !version) {
+        routes = defaultRoutes;
+        SharedStore.setItem(KEYS.ROUTES, routes);
+        SharedStore.setItem("ROUTE_VERSION_2", true);
+    }
+    return routes;
+  },
+  saveRoutes(routes) {
+    SharedStore.setItem(KEYS.ROUTES, routes);
+    notifySubscribers();
+  },
+  addRoute(route) {
+    const routes = this.getRoutes();
+    routes.push(route);
+    this.saveRoutes(routes);
+    this.addActivity("Route Created", `New route ${route.number} configured.`);
+  },
+  updateRoute(routeId, updatedFields) {
+    const routes = this.getRoutes();
+    const idx = routes.findIndex(r => r.number === routeId);
+    if (idx !== -1) {
+      routes[idx] = { ...routes[idx], ...updatedFields };
+      this.saveRoutes(routes);
+      this.addActivity("Route Updated", `Route ${routeId} stops and metadata updated.`);
+    }
+  },
+  deleteRoute(routeId) {
+    const routes = this.getRoutes();
+    const filtered = routes.filter(r => r.number !== routeId);
+    this.saveRoutes(filtered);
+    this.addActivity("Route Deleted", `Route ${routeId} removed from network.`);
   },
 
   // Bus CRUD (Delegated to BusService)
@@ -349,26 +388,7 @@ export const DataService = {
     this.addActivity("Bus Disabled/Removed", `Bus ${busId} was decommissioned from the fleet.`);
   },
 
-  // Route CRUD (Delegated to RouteService)
-  getRoutes() {
-    return RouteService.getAllRoutes();
-  },
-  saveRoutes(routes) {
-    SharedStore.setItem(KEYS.ROUTES, routes);
-    notifySubscribers();
-  },
-  addRoute(route) {
-    RouteService.addRoute(route);
-    this.addActivity("Route Created", `Route ${route.number} (${route.source} to ${route.destination}) created.`);
-  },
-  updateRoute(routeNum, updatedFields) {
-    RouteService.updateRoute(routeNum, updatedFields);
-    this.addActivity("Route Updated", `Route details and stops modified for Route ${routeNum}.`);
-  },
-  deleteRoute(routeNum) {
-    RouteService.deleteRoute(routeNum);
-    this.addActivity("Route Deleted", `Route ${routeNum} has been deleted from active database.`);
-  },
+
 
   // Device CRUD (Delegated to DeviceService)
   getDevices() {

@@ -594,10 +594,7 @@ export const SharedStore = {
                 dbUpdate.speed = event.speed !== undefined ? Number(event.speed) : 35;
               }
               if (pass !== undefined) {
-                const cap = 60;
                 dbUpdate.passengers = pass;
-                dbUpdate.capacity = cap;
-                dbUpdate.percentage = Math.round((pass / cap) * 100);
               }
               supabase.from('live_bus_status').upsert(dbUpdate, { onConflict: 'bus_id' }).then(({ error }) => {
                 if (error) console.error("Error upserting live_bus_status in Supabase:", error);
@@ -719,8 +716,6 @@ export async function saveOrUpdateTelemetry(payload) {
     longitude: payload.longitude,
     speed: payload.speed,
     passengers: payload.passengers,
-    capacity: 20,
-    percentage: Math.round(((payload.passengers || 0) / 20) * 100),
     last_updated: new Date()
   };
 

@@ -26,65 +26,51 @@ export const defaultRoutes = [
     ]
   },
   {
-    number: "19B", name: "Kelambakkam to T. Nagar", source: "Kelambakkam", destination: "T. Nagar Bus Terminus",
+    number: "19B", name: "T. Nagar Loop Route", source: "Adyar Depot", destination: "T. Nagar Bus Terminus",
     stops: [
-      { name: "Kelambakkam", distance: 0, scheduledTime: "08:30 AM", lat: 12.7850, lng: 80.2230, fareToNextStop: 10 },
-      { name: "Siruseri IT Park", distance: 5.5, scheduledTime: "08:45 AM", lat: 12.8284, lng: 80.2210, fareToNextStop: 15 },
-      { name: "Sholinganallur", distance: 13.2, scheduledTime: "09:05 AM", lat: 12.9010, lng: 80.2269, fareToNextStop: 10 },
-      { name: "Thoraipakkam (PTC Quarters)", distance: 18.0, scheduledTime: "09:20 AM", lat: 12.9372, lng: 80.2325, fareToNextStop: 12 },
-      { name: "SRP Tools / Taramani", distance: 22.5, scheduledTime: "09:35 AM", lat: 12.9782, lng: 80.2418, fareToNextStop: 8 },
-      { name: "Adyar Depot", distance: 25.1, scheduledTime: "09:45 AM", lat: 13.0064, lng: 80.2577, fareToNextStop: 6 },
-      { name: "Saidapet Stop", distance: 28.2, scheduledTime: "09:55 AM", lat: 13.0210, lng: 80.2227, fareToNextStop: 5 },
-      { name: "Nandanam", distance: 31.3, scheduledTime: "10:05 AM", lat: 13.0298, lng: 80.2335, fareToNextStop: 5 },
-      { name: "T. Nagar Bus Terminus", distance: 33.6, scheduledTime: "10:15 AM", lat: 13.0405, lng: 80.2337, fareToNextStop: 0 }
+      { name: "Adyar Depot", distance: 0, scheduledTime: "09:30 AM", lat: 13.0064, lng: 80.2577, fareToNextStop: 5 },
+      { name: "Saidapet Stop", distance: 3.1, scheduledTime: "09:42 AM", lat: 13.0210, lng: 80.2227, fareToNextStop: 5 },
+      { name: "Little Mount", distance: 4.8, scheduledTime: "09:50 AM", lat: 13.0163, lng: 80.2205, fareToNextStop: 5 },
+      { name: "Nandanam", distance: 6.2, scheduledTime: "09:58 AM", lat: 13.0298, lng: 80.2335, fareToNextStop: 5 },
+      { name: "T. Nagar Bus Terminus", distance: 8.5, scheduledTime: "10:10 AM", lat: 13.0405, lng: 80.2337, fareToNextStop: 0 }
     ]
   },
   {
-    number: "23C", name: "Thiruvanmiyur to Ayanavaram", source: "Thiruvanmiyur", destination: "Ayanavaram",
+    number: "23C", name: "Thiruvanmiyur Fast Route", source: "Mylapore Temple", destination: "Thiruvanmiyur",
     stops: [
-      { name: "Thiruvanmiyur", distance: 0, scheduledTime: "08:00 AM", lat: 12.9830, lng: 80.2516, fareToNextStop: 5 },
-      { name: "Adyar Signal", distance: 2.5, scheduledTime: "08:10 AM", lat: 13.0064, lng: 80.2577, fareToNextStop: 5 },
-      { name: "Mylapore Tank", distance: 6.8, scheduledTime: "08:25 AM", lat: 13.0330, lng: 80.2690, fareToNextStop: 6 },
-      { name: "Royapettah Hospital", distance: 8.5, scheduledTime: "08:35 AM", lat: 13.0535, lng: 80.2642, fareToNextStop: 7 },
-      { name: "Egmore Railway Station", distance: 11.2, scheduledTime: "08:50 AM", lat: 13.0785, lng: 80.2605, fareToNextStop: 8 },
-      { name: "Kellys", distance: 13.5, scheduledTime: "09:02 AM", lat: 13.0845, lng: 80.2450, fareToNextStop: 5 },
-      { name: "Ayanavaram Bus Depot", distance: 15.6, scheduledTime: "09:15 AM", lat: 13.0970, lng: 80.2330, fareToNextStop: 0 }
+      { name: "Mylapore Temple", distance: 0, scheduledTime: "09:45 AM", lat: 13.0330, lng: 80.2690, fareToNextStop: 5 },
+      { name: "Mandaveli", distance: 1.8, scheduledTime: "09:52 AM", lat: 13.0232, lng: 80.2625, fareToNextStop: 5 },
+      { name: "Adyar Depot", distance: 4.5, scheduledTime: "10:05 AM", lat: 13.0064, lng: 80.2577, fareToNextStop: 5 },
+      { name: "Thiruvanmiyur", distance: 7.2, scheduledTime: "10:20 AM", lat: 12.9830, lng: 80.2516, fareToNextStop: 0 }
     ]
   },
   {
-    number: "M70", name: "Thiruvanmiyur to CMBT", source: "Thiruvanmiyur", destination: "CMBT (Koyambedu)",
+    number: "M70", name: "Broadway Special Route", source: "Guindy Estate", destination: "Broadway",
     stops: [
-      { name: "Thiruvanmiyur", distance: 0, scheduledTime: "07:30 AM", lat: 12.9830, lng: 80.2516, fareToNextStop: 5 },
-      { name: "Tidel Park", distance: 2.1, scheduledTime: "07:38 AM", lat: 12.9894, lng: 80.2505, fareToNextStop: 6 },
-      { name: "Guindy Estate", distance: 6.5, scheduledTime: "07:55 AM", lat: 13.0084, lng: 80.2131, fareToNextStop: 8 },
-      { name: "Ashok Pillar", distance: 9.8, scheduledTime: "08:10 AM", lat: 13.0385, lng: 80.2030, fareToNextStop: 7 },
-      { name: "Vadapalani Signal", distance: 12.1, scheduledTime: "08:22 AM", lat: 13.0500, lng: 80.2120, fareToNextStop: 6 },
-      { name: "CMBT (Koyambedu)", distance: 14.5, scheduledTime: "08:35 AM", lat: 13.0675, lng: 80.2050, fareToNextStop: 0 }
+      { name: "Guindy Estate", distance: 0, scheduledTime: "09:10 AM", lat: 13.0084, lng: 80.2131, fareToNextStop: 5 },
+      { name: "Teynampet", distance: 5.2, scheduledTime: "09:25 AM", lat: 13.0340, lng: 80.2440, fareToNextStop: 5 },
+      { name: "Gemini Flyover", distance: 6.8, scheduledTime: "09:32 AM", lat: 13.0425, lng: 80.2514, fareToNextStop: 5 },
+      { name: "LIC", distance: 9.5, scheduledTime: "09:45 AM", lat: 13.0610, lng: 80.2640, fareToNextStop: 5 },
+      { name: "Broadway", distance: 13.0, scheduledTime: "10:00 AM", lat: 13.0880, lng: 80.2880, fareToNextStop: 0 }
     ]
   },
   {
-    number: "102", name: "Kelambakkam to Broadway", source: "Kelambakkam", destination: "Broadway",
+    number: "102", name: "Kelambakkam Local Route", source: "Adyar Depot", destination: "Kelambakkam",
     stops: [
-      { name: "Kelambakkam", distance: 0, scheduledTime: "08:00 AM", lat: 12.7850, lng: 80.2230, fareToNextStop: 18 },
-      { name: "Sholinganallur", distance: 13.2, scheduledTime: "08:30 AM", lat: 12.9010, lng: 80.2269, fareToNextStop: 15 },
-      { name: "Adyar Depot", distance: 25.1, scheduledTime: "09:05 AM", lat: 13.0064, lng: 80.2577, fareToNextStop: 12 },
-      { name: "Santhome", distance: 29.5, scheduledTime: "09:20 AM", lat: 13.0350, lng: 80.2770, fareToNextStop: 8 },
-      { name: "Marina Beach / Light House", distance: 31.8, scheduledTime: "09:30 AM", lat: 13.0425, lng: 80.2800, fareToNextStop: 7 },
-      { name: "Secretariat", distance: 34.5, scheduledTime: "09:42 AM", lat: 13.0805, lng: 80.2855, fareToNextStop: 5 },
-      { name: "Broadway (Parrys)", distance: 36.2, scheduledTime: "09:55 AM", lat: 13.0880, lng: 80.2880, fareToNextStop: 0 }
+      { name: "Adyar Depot", distance: 0, scheduledTime: "09:20 AM", lat: 13.0064, lng: 80.2577, fareToNextStop: 5 },
+      { name: "Taramani", distance: 4.8, scheduledTime: "09:35 AM", lat: 12.9782, lng: 80.2418, fareToNextStop: 5 },
+      { name: "Tidel Park", distance: 6.1, scheduledTime: "09:40 AM", lat: 12.9894, lng: 80.2505, fareToNextStop: 5 },
+      { name: "Sholinganallur", distance: 14.5, scheduledTime: "10:05 AM", lat: 12.9010, lng: 80.2269, fareToNextStop: 5 },
+      { name: "Kelambakkam", distance: 28.0, scheduledTime: "10:35 AM", lat: 12.7850, lng: 80.2230, fareToNextStop: 0 }
     ]
   },
   {
-    number: "570", name: "Siruseri to CMBT", source: "Siruseri IT Park", destination: "CMBT (Koyambedu)",
+    number: "570", name: "OMR Express Route", source: "Koyambedu", destination: "Siruseri IT Park",
     stops: [
-      { name: "Siruseri IT Park", distance: 0, scheduledTime: "08:15 AM", lat: 12.8284, lng: 80.2210, fareToNextStop: 15 },
-      { name: "Navalur", distance: 3.5, scheduledTime: "08:25 AM", lat: 12.8450, lng: 80.2260, fareToNextStop: 10 },
-      { name: "Sholinganallur Junction", distance: 7.8, scheduledTime: "08:40 AM", lat: 12.9010, lng: 80.2269, fareToNextStop: 12 },
-      { name: "Karapakkam", distance: 10.5, scheduledTime: "08:50 AM", lat: 12.9230, lng: 80.2300, fareToNextStop: 10 },
-      { name: "SRP Tools", distance: 15.2, scheduledTime: "09:08 AM", lat: 12.9782, lng: 80.2418, fareToNextStop: 8 },
-      { name: "Guindy Railway Station", distance: 19.5, scheduledTime: "09:25 AM", lat: 13.0084, lng: 80.2131, fareToNextStop: 12 },
-      { name: "Vadapalani", distance: 25.1, scheduledTime: "09:45 AM", lat: 13.0500, lng: 80.2120, fareToNextStop: 8 },
-      { name: "CMBT (Koyambedu)", distance: 27.5, scheduledTime: "10:00 AM", lat: 13.0675, lng: 80.2050, fareToNextStop: 0 }
+      { name: "Koyambedu", distance: 0, scheduledTime: "10:00 AM", lat: 13.0732, lng: 80.1915, fareToNextStop: 5 },
+      { name: "Gemini Flyover", distance: 12.0, scheduledTime: "10:25 AM", lat: 13.0425, lng: 80.2514, fareToNextStop: 5 },
+      { name: "Sholinganallur", distance: 25.0, scheduledTime: "10:55 AM", lat: 12.9010, lng: 80.2269, fareToNextStop: 5 },
+      { name: "Siruseri IT Park", distance: 38.0, scheduledTime: "11:20 AM", lat: 12.8282, lng: 80.2185, fareToNextStop: 0 }
     ]
   }
 ];
